@@ -1,0 +1,6 @@
+# Python
+__pycache__/
+*.pyc
+
+# Banco de dados (contém dados reais, não versionar)
+data/*.db

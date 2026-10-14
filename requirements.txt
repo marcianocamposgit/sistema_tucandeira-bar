@@ -1,0 +1,2 @@
+# Python 3.14 — Tkinter e sqlite3 já vêm com o Python
+pillow>=12.2.0
