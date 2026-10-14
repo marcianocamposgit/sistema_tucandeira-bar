@@ -23,7 +23,7 @@ if str(RAIZ) not in sys.path:
 import config  # noqa: E402
 from database import ambiente_do_banco, conectar, migrar  # noqa: E402
 from models import AutorizacaoGerente  # noqa: E402
-from services import caixa, comandas, configuracoes, produtos, usuarios  # noqa: E402
+from services import caixa, comandas, produtos, usuarios  # noqa: E402
 from services.backup import fazer_backup  # noqa: E402
 
 USUARIOS_DEMO = [
@@ -81,10 +81,6 @@ def verificar_ambiente(pasta_dados, conexao, executavel=None):
         raise AmbienteProibidoError("Este banco está marcado como produção. Nada foi alterado.")
 
 
-def _proximo_sabado(hoje):
-    return hoje + timedelta(days=(5 - hoje.weekday()) % 7)
-
-
 def popular(conexao, hoje=None, dias=14, semente=42):
     """Cria os dados de demonstração. Devolve um resumo (dict)."""
     if usuarios.existe_usuario(conexao):
@@ -110,9 +106,6 @@ def popular(conexao, hoje=None, dias=14, semente=42):
         produtos.cadastrar_produto(conexao, nome, categorias[categoria], preco, gerente.id, autorizacao,
                                    estoque_inicial=estoque, estoque_minimo=minimo, agora=inicio)
     lista_produtos = produtos.listar_produtos(conexao)
-
-    # --- Couvert: show no próximo sábado ---
-    configuracoes.configurar_couvert(conexao, 1500, _proximo_sabado(hoje), gerente.id, autorizacao, agora=inicio)
 
     # --- Dias passados: caixa aberto às 18h e fechado às 2h, com movimentos ---
     caixas_fechados = 0

@@ -20,9 +20,6 @@ class Comanda:
     status: str
     caixa_id: int
     unida_a: Optional[int]
-    taxa_servico_ativa: bool
-    taxa_removida_por: Optional[int]
-    couvert_unitario_centavos: int
     aberta_em: str
     aberta_por: int
     fechada_em: Optional[str] = None
@@ -67,18 +64,18 @@ class ItemComanda:
 
 @dataclass
 class Conta:
-    """Valores da comanda, sempre recalculados a partir dos itens atuais."""
+    """Valores da comanda, sempre recalculados a partir dos itens atuais.
+
+    Total = soma dos itens (preço de tabela) − descontos.
+    """
     subtotal_centavos: int
-    taxa_servico_centavos: int
-    couvert_centavos: int
     desconto_centavos: int
     pago_centavos: int
     pessoas: int
 
     @property
     def total_centavos(self):
-        return max(0, self.subtotal_centavos + self.taxa_servico_centavos
-                   + self.couvert_centavos - self.desconto_centavos)
+        return max(0, self.subtotal_centavos - self.desconto_centavos)
 
     @property
     def saldo_centavos(self):

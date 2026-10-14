@@ -53,7 +53,7 @@ Falhas do legado que a versão web não pode repetir:
 - Comanda que se perde ao fechar a tela: cada item lançado é gravado na hora.
 - Estoque baixando ao lançar o item: o estoque só baixa no pagamento.
 - Pagamento de balcão que fechava a comanda errada: toda operação recebe o id da comanda.
-- Venda que não guardava os itens: a venda grava itens, pagamentos, taxa, couvert, desconto e usuário.
+- Venda que não guardava os itens: a venda grava itens, pagamentos, desconto e usuário.
 - Relatório mostrando total geral em vez do período.
 - Constantes (cores, caminhos) repetidas em vários arquivos e caminho absoluto da logo.
 
@@ -63,7 +63,7 @@ Falhas do legado que a versão web não pode repetir:
 tucandeira-bar/
 ├── app.py               # cria o app Flask (create_app), registra blueprints; roda o servidor de desenvolvimento
 ├── servidor.py          # inicia o app com waitress (produção, rede local)
-├── config.py            # NUM_MESAS, PORTA, prazos, taxa, tempo de sessão, caminhos (pathlib)
+├── config.py            # NUM_MESAS, PORTA, prazos, formas de pagamento, tempo de sessão, caminhos (pathlib)
 ├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial
 ├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
 ├── services/            # regras de negócio, SEM nenhum import de Flask
@@ -141,7 +141,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - **Mesa ocupada** = linha em `comanda_mesas` com `liberada_em IS NULL`; um índice único parcial impede duas comandas na mesma mesa. Transferir e juntar mesas mexem só nessa tabela.
 - Status da comanda: `aberta`, `conta_pedida`, `paga`, `unida` (foi juntada a outra, `unida_a`), `cancelada`.
 - Cada toque em "+" é uma linha em `itens_comanda` com a própria hora (necessário para a regra dos 2 minutos). Remoções e cancelamentos ficam em `item_ajustes`; a quantidade atual do item já desconta os ajustes.
-- Taxa de serviço, couvert e descontos ficam **na comanda**, porque ela recebe pagamentos antes de fechar. Total = subtotal + taxa + couvert − descontos; já pago = soma dos `pagamentos` não estornados; saldo = total − já pago.
+- **Sem taxa de serviço e sem couvert:** o cliente paga exatamente o preço de tabela dos produtos. Os descontos ficam **na comanda**, porque ela recebe pagamentos antes de fechar. Total = soma dos itens − descontos; já pago = soma dos `pagamentos` não estornados; saldo = total − já pago.
 - Ao zerar o saldo, na mesma transação: cria `vendas` + `itens_venda`, baixa o estoque, marca a comanda como `paga` e libera as mesas. `vendas.comanda_id` é único (nunca duas vendas da mesma comanda). Lançar item depois de um pagamento parcial é permitido; remover, cancelar ou dar desconto que deixe o total abaixo do já pago, não.
 - Só um caixa com status `aberto` (índice único parcial). Conferência = soma dos pagamentos não estornados do caixa por forma.
 - `configuracoes.ambiente` (`desenvolvimento` ou `producao`) é gravado na criação do banco e nunca muda. `desenvolvimento` só quando o banco é criado pelo código-fonte na pasta `data/` do projeto.
@@ -151,7 +151,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 
 - **Services não importam Flask** (nem `request`, `session`, `flash`, `abort`). Recebem dados simples e a conexão/usuário por parâmetro; em caso de erro lançam exceções próprias (ex.: `CaixaFechadoError`, `PermissaoNegadaError`, `PrazoRemocaoExpiradoError`) e a rota decide como responder.
 - **Routes não acessam o banco direto** e não contêm regra de negócio: validam a entrada, chamam o service, devolvem template ou JSON.
-- **Templates não calculam valores**: totais, taxa e troco vêm prontos do service.
+- **Templates não calculam valores**: totais, saldo, valor por pessoa e troco vêm prontos do service.
 - `legado_tkinter/` não é importado por nenhum arquivo.
 - Caminhos de arquivo sempre com `pathlib`, definidos só no `config.py`, em dois grupos:
   - **Arquivos do programa** (templates, static, assets): relativos a `Path(__file__).resolve().parent`; no executável do PyInstaller, relativos a `sys._MEIPASS` (detectar com `getattr(sys, "frozen", False)`).
@@ -182,7 +182,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 ## Decisões tomadas
 
 - **Produto sem estoque:** avisar e permitir a venda. O estoque pode ficar negativo, e isso aparece destacado nos relatórios.
-- **Taxa de serviço de 10%:** ativada por padrão nas mesas, desativada no balcão. Pode ser removida no pagamento (exige PIN de gerente).
+- **Preço de tabela:** o bar **não** cobra taxa de serviço nem couvert artístico. O cliente paga exatamente a soma dos produtos, menos um eventual desconto (motivo e PIN de gerente).
 - **Pagamento dividido e parcial:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro) e aos poucos (uma pessoa paga a parte dela e vai embora). A comanda mostra total, já pago e saldo; a venda é fechada quando o saldo chega a zero. Cada pagamento registra quem recebeu.
 - **Formas de pagamento:** Dinheiro, Débito, Crédito e PIX (também separadas na conferência do caixa).
 - **Estorno de pagamento:** enquanto a comanda não estiver paga, um pagamento lançado errado pode ser estornado, com motivo e PIN de gerente. O pagamento não é apagado: fica marcado como estornado e deixa de contar no já pago e na conferência do caixa.
@@ -197,11 +197,11 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 
 ### Versão 2.0
 
-- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, cancelar comanda com itens, dar desconto, remover taxa de serviço, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
+- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, cancelar comanda com itens, dar desconto, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
 - **Caixa:** o sistema só permite vendas com caixa aberto. Abertura com valor inicial (fundo de troco). Sangria e suprimento com motivo. Fechamento com conferência: valor esperado x valor contado por forma de pagamento (dinheiro, débito, crédito, PIX), mostrando a diferença. Não fecha com comandas abertas ou com conta pedida.
 - **Mesas:** status livre, ocupada e "conta pedida" (cores diferentes); número de pessoas na mesa; transferir comanda para outra mesa; juntar mesas.
 - **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado; cancelamento da comanda inteira (regra acima).
-- **Pagamento:** taxa de 10% (regra acima); couvert artístico opcional por pessoa, com valor configurável e ativado no dia de show; desconto em R$ ou % com motivo; dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
+- **Pagamento:** preço de tabela, sem taxa de serviço nem couvert; desconto em R$ ou % com motivo e PIN de gerente; dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
 - **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; movimentos de estoque registrados (entrada de mercadoria, perda, ajuste de contagem).
 - **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
 - **Segurança dos dados:** backup automático do banco ao iniciar o servidor (e uma vez por dia enquanto ele estiver rodando), mantendo os 7 últimos.

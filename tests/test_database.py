@@ -21,6 +21,14 @@ def test_banco_criado_em_wal_com_chaves_estrangeiras(conexao):
     assert database.versao_esquema(conexao) == database.VERSAO_ESQUEMA
 
 
+def test_sem_taxa_de_servico_nem_couvert_no_esquema(conexao):
+    colunas = {l["name"] for tabela in ("comandas", "vendas")
+               for l in conexao.execute(f"PRAGMA table_info({tabela})")}
+    assert not {c for c in colunas if "taxa" in c or "couvert" in c}
+    chaves = [l["chave"] for l in conexao.execute("SELECT chave FROM configuracoes")]
+    assert chaves == ["ambiente"]
+
+
 def test_carga_inicial_com_6_produtos_e_4_categorias(conexao):
     categorias = [l["nome"] for l in conexao.execute("SELECT nome FROM categorias ORDER BY ordem")]
     assert categorias == ["Bebida", "Tira-Gosto", "Lanche", "Cigarro"]
@@ -94,8 +102,8 @@ def _abrir_comanda_mesa(con, mesa, usuario, caixa):
     agora = database.agora_texto()
     with transacao(con):
         comanda = con.execute(
-            """INSERT INTO comandas (tipo, caixa_id, taxa_servico_ativa, aberta_em, aberta_por)
-               VALUES ('mesa', ?, 1, ?, ?)""", (caixa, agora, usuario)).lastrowid
+            """INSERT INTO comandas (tipo, caixa_id, aberta_em, aberta_por)
+               VALUES ('mesa', ?, ?, ?)""", (caixa, agora, usuario)).lastrowid
         con.execute(
             """INSERT INTO comanda_mesas (comanda_id, mesa, principal, vinculada_em)
                VALUES (?, ?, 1, ?)""", (comanda, mesa, agora))
@@ -127,7 +135,7 @@ def test_uma_venda_por_comanda(conexao):
     comanda = _abrir_comanda_mesa(conexao, 1, usuario, caixa)
     sql = """INSERT INTO vendas (comanda_id, caixa_id, pessoas, subtotal_centavos, total_centavos,
                                  fechada_por, criado_em)
-             VALUES (?, ?, 1, 800, 880, ?, ?)"""
+             VALUES (?, ?, 1, 800, 800, ?, ?)"""
     conexao.execute(sql, (comanda, caixa, usuario, database.agora_texto()))
     with pytest.raises(sqlite3.IntegrityError):
         conexao.execute(sql, (comanda, caixa, usuario, database.agora_texto()))

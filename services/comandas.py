@@ -25,7 +25,6 @@ from models import (
     de_linha,
 )
 from models.comandas import STATUS_EDITAVEIS
-from services import configuracoes
 from services.caixa import exigir_caixa_aberto
 from services.comum import (
     exigir_inteiro,
@@ -66,8 +65,7 @@ def _mesas_da_comanda(conexao, linha):
 
 
 def _comanda(conexao, linha):
-    return de_linha(Comanda, linha, taxa_servico_ativa=bool(linha["taxa_servico_ativa"]),
-                    mesas=_mesas_da_comanda(conexao, linha))
+    return de_linha(Comanda, linha, mesas=_mesas_da_comanda(conexao, linha))
 
 
 def obter_comanda(conexao, comanda_id):
@@ -102,13 +100,6 @@ def total_pago(conexao, comanda_id):
     ).fetchone()[0]
 
 
-def calcular_taxa(subtotal_centavos, ativa=True):
-    """Taxa de serviço sobre o subtotal, arredondada ao centavo (meio centavo para cima)."""
-    if not ativa:
-        return 0
-    return (subtotal_centavos * config.TAXA_SERVICO_PERCENTUAL + 50) // 100
-
-
 def _conta(conexao, comanda):
     subtotal = conexao.execute(
         "SELECT COALESCE(SUM(preco_unitario_centavos * quantidade), 0) FROM itens_comanda WHERE comanda_id = ?",
@@ -119,8 +110,6 @@ def _conta(conexao, comanda):
     ).fetchone()[0]
     return Conta(
         subtotal_centavos=subtotal,
-        taxa_servico_centavos=calcular_taxa(subtotal, comanda.taxa_servico_ativa),
-        couvert_centavos=comanda.couvert_unitario_centavos * comanda.pessoas,
         desconto_centavos=desconto,
         pago_centavos=total_pago(conexao, comanda.id),
         pessoas=comanda.pessoas,
@@ -218,25 +207,23 @@ def _validar_pessoas(pessoas):
     return exigir_inteiro(pessoas, "o número de pessoas", minimo=1, maximo=MAXIMO_PESSOAS)
 
 
-def _inserir_comanda(conexao, tipo, nome_cliente, pessoas, caixa, taxa, usuario_id, agora):
-    couvert = configuracoes.couvert_para_data(conexao, ler_data(caixa.aberto_em).date())
+def _inserir_comanda(conexao, tipo, nome_cliente, pessoas, caixa, usuario_id, agora):
     return conexao.execute(
-        """INSERT INTO comandas (tipo, nome_cliente, pessoas, caixa_id, taxa_servico_ativa,
-                                 couvert_unitario_centavos, aberta_em, aberta_por)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (tipo, nome_cliente, pessoas, caixa.id, 1 if taxa else 0, couvert, texto_data(agora), usuario_id),
+        """INSERT INTO comandas (tipo, nome_cliente, pessoas, caixa_id, aberta_em, aberta_por)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (tipo, nome_cliente, pessoas, caixa.id, texto_data(agora), usuario_id),
     ).lastrowid
 
 
 def abrir_mesa(conexao, mesa, usuario_id, pessoas=1, agora=None):
-    """Abre a comanda de uma mesa livre. Taxa de serviço ativada por padrão."""
+    """Abre a comanda de uma mesa livre."""
     _validar_mesa(mesa)
     _validar_pessoas(pessoas)
     with transacao(conexao):
         caixa = exigir_caixa_aberto(conexao)
         if comanda_da_mesa(conexao, mesa):
             raise MesaOcupadaError(mesa)
-        comanda_id = _inserir_comanda(conexao, "mesa", None, pessoas, caixa, True, usuario_id, agora)
+        comanda_id = _inserir_comanda(conexao, "mesa", None, pessoas, caixa, usuario_id, agora)
         conexao.execute(
             "INSERT INTO comanda_mesas (comanda_id, mesa, principal, vinculada_em) VALUES (?, ?, 1, ?)",
             (comanda_id, mesa, texto_data(agora)),
@@ -258,7 +245,7 @@ def abrir_balcao(conexao, nome_cliente, usuario_id, pessoas=1, agora=None):
         if repetida:
             raise DadosInvalidosError(
                 f"Já existe uma comanda de balcão aberta para {nome_cliente}. Use outro nome.")
-        comanda_id = _inserir_comanda(conexao, "balcao", nome_cliente, pessoas, caixa, False, usuario_id, agora)
+        comanda_id = _inserir_comanda(conexao, "balcao", nome_cliente, pessoas, caixa, usuario_id, agora)
     return obter_comanda(conexao, comanda_id)
 
 
@@ -360,7 +347,6 @@ def alterar_pessoas(conexao, comanda_id, pessoas, usuario_id, agora=None):
         exigir_caixa_aberto(conexao)
         comanda = _comanda_editavel(conexao, comanda_id)
         conexao.execute("UPDATE comandas SET pessoas = ? WHERE id = ?", (pessoas, comanda_id))
-        _exigir_conta_coberta(conexao, comanda_id)  # o couvert é por pessoa
         registrar_auditoria(conexao, "pessoas_alteradas", usuario_id,
                             {"comanda_id": comanda_id, "antes": comanda.pessoas, "depois": pessoas},
                             agora=agora)

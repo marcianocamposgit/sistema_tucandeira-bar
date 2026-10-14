@@ -163,9 +163,6 @@ CREATE TABLE comandas (
                                 CHECK (status IN ('aberta', 'conta_pedida', 'paga', 'unida', 'cancelada')),
     caixa_id                    INTEGER NOT NULL REFERENCES caixas(id),
     unida_a                     INTEGER REFERENCES comandas(id),
-    taxa_servico_ativa          INTEGER NOT NULL CHECK (taxa_servico_ativa IN (0, 1)),
-    taxa_removida_por           INTEGER REFERENCES usuarios(id),
-    couvert_unitario_centavos   INTEGER NOT NULL DEFAULT 0 CHECK (couvert_unitario_centavos >= 0),
     aberta_em                   TEXT NOT NULL,
     aberta_por                  INTEGER NOT NULL REFERENCES usuarios(id),
     fechada_em                  TEXT,
@@ -256,8 +253,6 @@ CREATE TABLE vendas (
     caixa_id               INTEGER NOT NULL REFERENCES caixas(id),
     pessoas                INTEGER NOT NULL CHECK (pessoas >= 1),
     subtotal_centavos      INTEGER NOT NULL,
-    taxa_servico_centavos  INTEGER NOT NULL DEFAULT 0,
-    couvert_centavos       INTEGER NOT NULL DEFAULT 0,
     desconto_centavos      INTEGER NOT NULL DEFAULT 0,
     total_centavos         INTEGER NOT NULL,
     fechada_por            INTEGER NOT NULL REFERENCES usuarios(id),
@@ -304,16 +299,10 @@ def _migracao_1(conexao, ambiente):
         conexao.execute(comando)
 
     agora = agora_texto()
-    configuracoes = {
-        "ambiente": ambiente,
-        "couvert_valor_centavos": "0",
-        "data_show": "",
-    }
-    for chave, valor in configuracoes.items():
-        conexao.execute(
-            "INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES (?, ?, ?)",
-            (chave, valor, agora),
-        )
+    conexao.execute(
+        "INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES ('ambiente', ?, ?)",
+        (ambiente, agora),
+    )
 
     ids_categorias = {}
     for ordem, nome in enumerate(CATEGORIAS_INICIAIS, start=1):

@@ -1,12 +1,12 @@
 import threading
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 
 import config
 from database import conectar
 from models import AutorizacaoGerente
-from services import caixa, comandas, configuracoes
+from services import caixa, comandas
 from services.erros import (
     CaixaFechadoError,
     ComandaComPagamentosError,
@@ -32,7 +32,7 @@ def test_abrir_comanda_exige_caixa_aberto(conexao, operador):
 
 def test_abrir_mesa(conexao, operador, caixa_aberto):
     c = comandas.abrir_mesa(conexao, 3, operador.id, pessoas=4)
-    assert (c.tipo, c.mesas, c.pessoas, c.taxa_servico_ativa, c.identificacao) == ("mesa", [3], 4, True, "Mesa 3")
+    assert (c.tipo, c.mesas, c.pessoas, c.identificacao) == ("mesa", [3], 4, "Mesa 3")
     with pytest.raises(MesaOcupadaError):
         comandas.abrir_mesa(conexao, 3, operador.id)
     with pytest.raises(DadosInvalidosError):
@@ -44,7 +44,7 @@ def test_abrir_mesa(conexao, operador, caixa_aberto):
 def test_balcao_varias_comandas_por_nome(conexao, operador, caixa_aberto):
     joao = comandas.abrir_balcao(conexao, "João", operador.id)
     maria = comandas.abrir_balcao(conexao, "Maria", operador.id)
-    assert not joao.taxa_servico_ativa and joao.identificacao == "Balcão — João"
+    assert joao.identificacao == "Balcão — João"
     with pytest.raises(DadosInvalidosError):
         comandas.abrir_balcao(conexao, "joão", operador.id)
     assert [r.comanda.id for r in comandas.listar_abertas(conexao, tipo="balcao")] == [joao.id, maria.id]
@@ -55,9 +55,9 @@ def test_lancar_itens_e_conta(conexao, operador, caixa_aberto):
     comandas.lancar_item(conexao, c.id, BRAHMA, operador.id, quantidade=3)
     comandas.lancar_item(conexao, c.id, CALABRESA, operador.id, observacao="  bem passada ")
     conta = comandas.calcular_conta(conexao, c.id)
-    # 3 x 8,00 + 28,00 = 52,00; taxa 10% = 5,20
-    assert (conta.subtotal_centavos, conta.taxa_servico_centavos, conta.total_centavos) == (5200, 520, 5720)
-    assert conta.por_pessoa_centavos == 2860
+    # Preço de tabela, sem acréscimos: 3 x 8,00 + 28,00 = 52,00
+    assert (conta.subtotal_centavos, conta.total_centavos, conta.saldo_centavos) == (5200, 5200, 5200)
+    assert conta.por_pessoa_centavos == 2600
     itens = comandas.listar_itens(conexao, c.id)
     assert [(i.nome_produto, i.quantidade, i.observacao) for i in itens] == [
         ("Brahma Lata", 3, None), ("Porção Calabresa", 1, "bem passada")]
@@ -152,26 +152,18 @@ def test_conta_pedida_e_estado_das_mesas(conexao, operador, caixa_aberto):
     comandas.abrir_mesa(conexao, 5, operador.id)
     estados = {e.numero: e for e in comandas.estado_mesas(conexao)}
     assert len(estados) == config.NUM_MESAS
-    assert (estados[2].status, estados[2].pessoas, estados[2].total_centavos) == ("conta_pedida", 3, 1540)
+    assert (estados[2].status, estados[2].pessoas, estados[2].total_centavos) == ("conta_pedida", 3, 1400)
     assert estados[5].status == "ocupada" and estados[1].status == "livre"
     comandas.marcar_conta_pedida(conexao, c.id, operador.id, pedida=False)
     assert comandas.obter_comanda(conexao, c.id).status == "aberta"
 
 
-def test_alterar_pessoas_e_couvert(conexao, gerente, operador, autorizacao):
-    configuracoes.configurar_couvert(conexao, 1500, date.today(), gerente.id, autorizacao)
-    caixa.abrir(conexao, 0, operador.id)
+def test_alterar_pessoas_so_muda_a_divisao(conexao, operador, caixa_aberto):
     mesa = comandas.abrir_mesa(conexao, 1, operador.id, pessoas=2)
-    balcao = comandas.abrir_balcao(conexao, "Ana", operador.id)
-    assert mesa.couvert_unitario_centavos == 1500 and balcao.couvert_unitario_centavos == 1500
+    comandas.lancar_item(conexao, mesa.id, CALABRESA, operador.id)
     comandas.alterar_pessoas(conexao, mesa.id, 3, operador.id)
     conta = comandas.calcular_conta(conexao, mesa.id)
-    assert conta.couvert_centavos == 4500 and conta.total_centavos == 4500
-
-
-def test_couvert_so_no_dia_do_show(conexao, gerente, operador, autorizacao, caixa_aberto):
-    configuracoes.configurar_couvert(conexao, 1500, date.today() + timedelta(days=1), gerente.id, autorizacao)
-    assert comandas.abrir_mesa(conexao, 1, operador.id).couvert_unitario_centavos == 0
+    assert (conta.total_centavos, conta.pessoas, conta.por_pessoa_centavos) == (2800, 3, 934)
 
 
 def test_transferir_mesa(conexao, operador, caixa_aberto):
