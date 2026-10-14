@@ -158,7 +158,7 @@ tucandeira-bar/
 - Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar os testes e o servidor, resumir o que mudou e aguardar confirmação antes da próxima.
 - Fazer commit no git ao fim de cada etapa, com mensagem em português.
 - Perguntar antes de apagar arquivos ou mudar o comportamento de alguma funcionalidade existente.
-- Nunca apagar nem recriar o banco com dados reais (`data/tucandeira.db` no desenvolvimento, `C:TucandeiraBardados	ucandeira.db` no bar); alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).
+- Nunca apagar nem recriar o banco com dados reais (`data/tucandeira.db` no desenvolvimento, `C:\TucandeiraBar\dados\tucandeira.db` no bar); alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).
 - Manter a identidade visual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Anton local nos títulos, logo).
 - Testar cada tela no **Chrome do tablet antigo** e **num celular** (a partir de 360 px de largura), em retrato e paisagem — não só no computador. O modo de dispositivo do navegador do computador serve para o desenvolvimento, mas não substitui o teste nos aparelhos reais.
 
