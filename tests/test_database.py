@@ -25,8 +25,8 @@ def test_sem_taxa_de_servico_nem_couvert_no_esquema(conexao):
     colunas = {l["name"] for tabela in ("comandas", "vendas")
                for l in conexao.execute(f"PRAGMA table_info({tabela})")}
     assert not {c for c in colunas if "taxa" in c or "couvert" in c}
-    chaves = [l["chave"] for l in conexao.execute("SELECT chave FROM configuracoes")]
-    assert chaves == ["ambiente"]
+    config_banco = {l["chave"]: l["valor"] for l in conexao.execute("SELECT chave, valor FROM configuracoes")}
+    assert config_banco == {"ambiente": "desenvolvimento", "permitir_desconto": "0"}
 
 
 def test_carga_inicial_com_6_produtos_e_4_categorias(conexao):

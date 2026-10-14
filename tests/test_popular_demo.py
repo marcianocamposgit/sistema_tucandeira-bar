@@ -5,7 +5,7 @@ import pytest
 import config
 from database import conectar, migrar
 from scripts import popular_demo
-from services import caixa, comandas, produtos, usuarios
+from services import caixa, comandas, configuracoes, produtos, usuarios
 
 
 @pytest.fixture
@@ -68,8 +68,40 @@ def test_popular(banco_dev):
     assert resumo["comandas_abertas"] == 5
     estados = {e.numero: e.status for e in comandas.estado_mesas(con)}
     assert (estados[2], estados[3], estados[4], estados[5]) == ("ocupada", "ocupada", "ocupada", "conta_pedida")
-    situacoes = {p.nome: p.situacao_estoque for p in produtos.listar_alertas_estoque(con)}
-    assert situacoes["Isqueiro"] == "zerado" and situacoes["Isca de Peixe"] == "abaixo_minimo"
+    mesa2 = comandas.calcular_conta(con, comandas.comanda_da_mesa(con, 2).id)
+    assert mesa2.pago_centavos == 3200 and mesa2.saldo_centavos > 0
+
+
+def _contar(con, sql):
+    return con.execute(sql).fetchone()[0]
+
+
+def test_popular_cria_historico_de_vendas(banco_dev):
+    _, con = banco_dev
+    resumo = popular_demo.popular(con, hoje=date(2026, 10, 14))
+    assert resumo["vendas"] > 100
+    assert _contar(con, "SELECT COUNT(*) FROM vendas") == resumo["vendas"]
+    # As 4 formas de pagamento, pagamentos parciais, troco, estornos e descontos.
+    formas = {l[0] for l in con.execute("SELECT DISTINCT forma FROM pagamentos")}
+    assert formas == {"dinheiro", "debito", "credito", "pix"}
+    assert _contar(con, "SELECT COUNT(*) FROM (SELECT comanda_id FROM pagamentos GROUP BY comanda_id "
+                        "HAVING COUNT(*) > 1)") > 0
+    assert _contar(con, "SELECT COUNT(*) FROM pagamentos WHERE troco_centavos > 0") > 0
+    assert _contar(con, "SELECT COUNT(*) FROM pagamentos WHERE estornado_em IS NOT NULL") > 0
+    assert _contar(con, "SELECT COUNT(*) FROM descontos") > 0
+    assert _contar(con, "SELECT COUNT(*) FROM item_ajustes WHERE tipo = 'cancelamento'") > 0
+    assert _contar(con, "SELECT COUNT(*) FROM item_ajustes WHERE tipo = 'remocao'") > 0
+    # Cada venda fechada bate com os pagamentos não estornados da comanda.
+    assert _contar(con, """SELECT COUNT(*) FROM vendas v WHERE v.total_centavos <> (
+        SELECT COALESCE(SUM(valor_centavos), 0) FROM pagamentos p
+        WHERE p.comanda_id = v.comanda_id AND p.estornado_em IS NULL)""") == 0
+    # Conferência gravada = pagamentos do caixa (o esperado considera as vendas).
+    assert _contar(con, """SELECT COUNT(*) FROM caixa_conferencias c WHERE c.forma <> 'dinheiro'
+        AND c.esperado_centavos <> (SELECT COALESCE(SUM(valor_centavos), 0) FROM pagamentos p
+            WHERE p.caixa_id = c.caixa_id AND p.forma = c.forma AND p.estornado_em IS NULL)""") == 0
+    # Vendas sem estoque deixam produtos negativos, e o desconto termina desligado (padrão).
+    assert any(p.situacao_estoque == "negativo" for p in produtos.listar_alertas_estoque(con))
+    assert not configuracoes.desconto_permitido(con)
 
 
 def test_nao_popula_duas_vezes(banco_dev):

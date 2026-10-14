@@ -216,8 +216,6 @@ CREATE INDEX idx_item_ajustes_item ON item_ajustes(item_id);
 CREATE TABLE descontos (
     id               INTEGER PRIMARY KEY,
     comanda_id       INTEGER NOT NULL REFERENCES comandas(id),
-    tipo             TEXT NOT NULL CHECK (tipo IN ('valor', 'percentual')),
-    valor_informado  INTEGER NOT NULL CHECK (valor_informado > 0),
     valor_centavos   INTEGER NOT NULL CHECK (valor_centavos > 0),
     motivo           TEXT NOT NULL,
     usuario_id       INTEGER NOT NULL REFERENCES usuarios(id),
@@ -299,10 +297,16 @@ def _migracao_1(conexao, ambiente):
         conexao.execute(comando)
 
     agora = agora_texto()
-    conexao.execute(
-        "INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES ('ambiente', ?, ?)",
-        (ambiente, agora),
-    )
+    configuracoes = {
+        "ambiente": ambiente,
+        # Desconto é opcional, a critério do dono: desligado até um gerente ligar.
+        "permitir_desconto": "0",
+    }
+    for chave, valor in configuracoes.items():
+        conexao.execute(
+            "INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES (?, ?, ?)",
+            (chave, valor, agora),
+        )
 
     ids_categorias = {}
     for ordem, nome in enumerate(CATEGORIAS_INICIAIS, start=1):

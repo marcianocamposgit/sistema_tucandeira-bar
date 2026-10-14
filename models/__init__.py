@@ -13,11 +13,13 @@ from models.comandas import (
     ResultadoLancamento,
     ResumoComanda,
 )
+from models.pagamentos import Desconto, ItemVenda, Pagamento, ResultadoPagamento, Venda
 from models.produtos import Categoria, MovimentoEstoque, Produto
 from models.usuarios import AutorizacaoGerente, Usuario
 
 __all__ = [
     "AutorizacaoGerente", "Caixa", "CaixaMovimento", "Categoria", "Comanda", "ComandaPendente",
-    "ConferenciaForma", "Conta", "EstadoMesa", "ItemComanda", "MovimentoEstoque", "Produto",
-    "ResultadoFechamento", "ResultadoLancamento", "ResumoComanda", "Usuario", "de_linha",
+    "ConferenciaForma", "Conta", "Desconto", "EstadoMesa", "ItemComanda", "ItemVenda", "MovimentoEstoque",
+    "Pagamento", "Produto", "ResultadoFechamento", "ResultadoLancamento", "ResultadoPagamento",
+    "ResumoComanda", "Usuario", "Venda", "de_linha",
 ]

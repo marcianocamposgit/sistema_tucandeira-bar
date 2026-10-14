@@ -5,9 +5,13 @@ Todo o código, comentários, nomes de variáveis, mensagens ao usuário e texto
 
 ## Aparelhos que usam o sistema
 
-- **Tablet Android antigo, reaproveitado** — Android: a confirmar, Chrome: a confirmar. É o aparelho mais limitado e define o mínimo de compatibilidade de CSS e JavaScript.
-- **Celulares Android atuais dos garçons** — Chrome atualizado, telas a partir de 360 px de largura.
+**Uso inicial:** um tablet (garçom) e o PC servidor (caixa). Celulares talvez no futuro.
+
+- **Tablet Android antigo, reaproveitado (garçom)** — Android: a confirmar, Chrome: a confirmar. É o aparelho mais limitado e define o mínimo de compatibilidade de CSS e JavaScript.
 - **Computador servidor (caixa)** — Windows, navegador atual, com mouse e teclado.
+- **Celulares Android dos garçons (futuro, opcional)** — Chrome atualizado, telas a partir de 360 px de largura. O layout já deve funcionar neles, mas não são prioridade de teste.
+
+As proteções de acesso simultâneo que já existem continuam valendo (transações, índices únicos, conferência de comanda aberta, proteção contra pagamento duplo). **Não investir em novos cenários com muitos aparelhos**: o caso real é tablet + PC na mesma comanda.
 
 ## Como rodar
 
@@ -67,11 +71,15 @@ tucandeira-bar/
 ├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial
 ├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
 ├── services/            # regras de negócio, SEM nenhum import de Flask
+│   ├── erros.py         # exceções de regra de negócio (mensagens prontas em português)
+│   ├── comum.py         # relógio injetável, validações, auditoria
 │   ├── usuarios.py
 │   ├── produtos.py
 │   ├── caixa.py
 │   ├── comandas.py
-│   ├── pagamentos.py
+│   ├── pagamentos.py    # pagamentos, estornos, descontos e fechamento da venda
+│   ├── configuracoes.py # configurações do bar (ex.: permitir desconto)
+│   ├── formatacao.py    # formatar_moeda()
 │   ├── relatorios.py
 │   └── backup.py
 ├── routes/              # blueprints Flask: recebem a requisição, chamam services, devolvem HTML/JSON
@@ -144,6 +152,8 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - **Sem taxa de serviço e sem couvert:** o cliente paga exatamente o preço de tabela dos produtos. Os descontos ficam **na comanda**, porque ela recebe pagamentos antes de fechar. Total = soma dos itens − descontos; já pago = soma dos `pagamentos` não estornados; saldo = total − já pago.
 - Ao zerar o saldo, na mesma transação: cria `vendas` + `itens_venda`, baixa o estoque, marca a comanda como `paga` e libera as mesas. `vendas.comanda_id` é único (nunca duas vendas da mesma comanda). Lançar item depois de um pagamento parcial é permitido; remover, cancelar ou dar desconto que deixe o total abaixo do já pago, não.
 - Só um caixa com status `aberto` (índice único parcial). Conferência = soma dos pagamentos não estornados do caixa por forma.
+- Descontos só em R$ (`descontos.valor_centavos`), com motivo, quem lançou e o gerente que autorizou.
+- `configuracoes.permitir_desconto` (`0`/`1`, padrão `0`): só o gerente muda, com registro na auditoria.
 - `configuracoes.ambiente` (`desenvolvimento` ou `producao`) é gravado na criação do banco e nunca muda. `desenvolvimento` só quando o banco é criado pelo código-fonte na pasta `data/` do projeto.
 - Mudança de estrutura = nova função em `MIGRACOES` (nunca alterar as antigas). O servidor faz backup antes de migrar.
 
@@ -172,17 +182,19 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 
 ## Regras de trabalho
 
-- Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar os testes e o servidor, resumir o que mudou e aguardar confirmação antes da próxima.
+- Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar **todos** os testes (`python -m pytest`) e o servidor, resumir o que mudou, entregar um roteiro curto de teste manual e aguardar confirmação antes da próxima.
+- **Testes automáticos:** manter os existentes e rodá-los ao fim de cada etapa. Daqui para frente, escrever testes automáticos **só para regras de dinheiro, estoque, caixa ou acesso simultâneo**. Telas e rotas são testadas manualmente, com um roteiro curto de teste no fim de cada etapa (passos numerados: o que tocar e o que deve aparecer).
 - Fazer commit no git ao fim de cada etapa, com mensagem em português.
 - Perguntar antes de apagar arquivos ou mudar o comportamento de alguma funcionalidade existente.
 - Nunca apagar nem recriar o banco com dados reais (`data/tucandeira.db` no desenvolvimento, `C:\TucandeiraBar\dados\tucandeira.db` no bar); alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).
 - Manter a identidade visual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Anton local nos títulos, logo).
-- Testar cada tela no **Chrome do tablet antigo** e **num celular** (a partir de 360 px de largura), em retrato e paisagem — não só no computador. O modo de dispositivo do navegador do computador serve para o desenvolvimento, mas não substitui o teste nos aparelhos reais.
+- Testar cada tela no **Chrome do tablet antigo** (retrato e paisagem) e no **navegador do PC servidor** — não só no modo de dispositivo do navegador, que serve para o desenvolvimento mas não substitui o tablet real. Celular (a partir de 360 px) é teste opcional.
 
 ## Decisões tomadas
 
 - **Produto sem estoque:** avisar e permitir a venda. O estoque pode ficar negativo, e isso aparece destacado nos relatórios.
-- **Preço de tabela:** o bar **não** cobra taxa de serviço nem couvert artístico. O cliente paga exatamente a soma dos produtos, menos um eventual desconto (motivo e PIN de gerente).
+- **Preço de tabela:** o bar **não** cobra taxa de serviço nem couvert artístico. O cliente paga exatamente a soma dos produtos, menos um eventual desconto (ver abaixo).
+- **Desconto:** opcional, a critério do dono, e só em R$ (sem percentual). A configuração "permitir desconto" vem **desligada** e só o gerente liga ou desliga (registrado na auditoria). Desligada, o botão de desconto não aparece nas telas e o service recusa qualquer desconto (`DescontoNaoPermitidoError`). Ligada, cada desconto exige motivo e PIN de gerente, não pode passar da conta nem deixá-la abaixo do já pago. Um desconto lançado por engano pode ser removido pelo gerente (inclusive com a configuração desligada), com registro na auditoria.
 - **Pagamento dividido e parcial:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro) e aos poucos (uma pessoa paga a parte dela e vai embora). A comanda mostra total, já pago e saldo; a venda é fechada quando o saldo chega a zero. Cada pagamento registra quem recebeu.
 - **Formas de pagamento:** Dinheiro, Débito, Crédito e PIX (também separadas na conferência do caixa).
 - **Estorno de pagamento:** enquanto a comanda não estiver paga, um pagamento lançado errado pode ser estornado, com motivo e PIN de gerente. O pagamento não é apagado: fica marcado como estornado e deixa de contar no já pago e na conferência do caixa.
@@ -197,11 +209,11 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 
 ### Versão 2.0
 
-- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, cancelar comanda com itens, dar desconto, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
+- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, cancelar comanda com itens, ligar/desligar e dar desconto, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
 - **Caixa:** o sistema só permite vendas com caixa aberto. Abertura com valor inicial (fundo de troco). Sangria e suprimento com motivo. Fechamento com conferência: valor esperado x valor contado por forma de pagamento (dinheiro, débito, crédito, PIX), mostrando a diferença. Não fecha com comandas abertas ou com conta pedida.
 - **Mesas:** status livre, ocupada e "conta pedida" (cores diferentes); número de pessoas na mesa; transferir comanda para outra mesa; juntar mesas.
 - **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado; cancelamento da comanda inteira (regra acima).
-- **Pagamento:** preço de tabela, sem taxa de serviço nem couvert; desconto em R$ ou % com motivo e PIN de gerente; dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
+- **Pagamento:** preço de tabela, sem taxa de serviço nem couvert; desconto opcional só em R$ (regra acima); dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
 - **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; movimentos de estoque registrados (entrada de mercadoria, perda, ajuste de contagem).
 - **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
 - **Segurança dos dados:** backup automático do banco ao iniciar o servidor (e uma vez por dia enquanto ele estiver rodando), mantendo os 7 últimos.

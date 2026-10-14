@@ -8,9 +8,12 @@ Recusa-se a rodar no executável, fora da pasta data/ do projeto ou num banco
 marcado como produção. Usa os próprios services (com o relógio simulado), então
 os dados respeitam as mesmas regras do sistema.
 
-Ainda sem vendas no passado: o service de pagamentos é da Etapa 6, que completa este script.
+Cada noite passada tem vendas de mesa e de balcão, pagamentos nas 4 formas
+(inteiros e parciais), troco, alguns estornos, descontos, itens removidos e
+cancelados e comandas canceladas; o caixa fecha com a conferência dessas vendas.
 """
 import argparse
+import math
 import random
 import sys
 from datetime import date, datetime, time, timedelta
@@ -23,7 +26,7 @@ if str(RAIZ) not in sys.path:
 import config  # noqa: E402
 from database import ambiente_do_banco, conectar, migrar  # noqa: E402
 from models import AutorizacaoGerente  # noqa: E402
-from services import caixa, comandas, produtos, usuarios  # noqa: E402
+from services import caixa, comandas, configuracoes, pagamentos, produtos, usuarios  # noqa: E402
 from services.backup import fazer_backup  # noqa: E402
 
 USUARIOS_DEMO = [
@@ -61,6 +64,11 @@ MINIMOS_INICIAIS = {"Brahma Lata": 24, "Heineken Long Neck": 12, "Whisky 50ml": 
                     "Porção Calabresa": 4, "Pastel Carne": 10, "Marlboro 20un": 5}
 
 
+CLIENTES_BALCAO = ["Carla", "Diego", "Fernanda", "Gustavo", "Helena", "Igor", "Júlia", "Lucas", "Marta", "Paulo"]
+PESOS_FORMAS = {"dinheiro": 3, "debito": 3, "credito": 2, "pix": 3}
+QUANTIDADES = [1, 1, 1, 2, 2, 3, 4]
+
+
 class AmbienteProibidoError(Exception):
     pass
 
@@ -79,6 +87,82 @@ def verificar_ambiente(pasta_dados, conexao, executavel=None):
             f"A pasta de dados ({pasta_dados}) não é a pasta data/ do projeto.")
     if ambiente_do_banco(conexao) != "desenvolvimento":
         raise AmbienteProibidoError("Este banco está marcado como produção. Nada foi alterado.")
+
+
+def _sortear_forma(sorteio):
+    formas = list(PESOS_FORMAS)
+    return sorteio.choices(formas, weights=[PESOS_FORMAS[f] for f in formas])[0]
+
+
+def _pagar(conexao, sorteio, comanda_id, forma, valor, garcom, momento):
+    """Paga `valor`; em dinheiro, o cliente entrega uma nota que dá troco às vezes."""
+    recebido = None
+    if forma == "dinheiro":
+        recebido = sorteio.choice([valor, math.ceil(valor / 1000) * 1000, math.ceil(valor / 5000) * 5000])
+    return pagamentos.registrar_pagamento(conexao, comanda_id, forma, valor, garcom.id,
+                                          recebido_centavos=recebido, agora=momento)
+
+
+def _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto):
+    """Atende clientes um de cada vez, das 18h30 até a madrugada. Devolve o nº de vendas."""
+    momento = datetime.combine(dia, time(18, 30))
+    clientes = sorteio.randint(6, 10) + (5 if dia.weekday() in (4, 5) else 0)  # sexta e sábado: mais cheio
+    vendas = 0
+    for numero in range(clientes):
+        garcom = sorteio.choice(operadores)
+        if sorteio.random() < 0.7:
+            comanda = comandas.abrir_mesa(conexao, sorteio.randint(1, config.NUM_MESAS), garcom.id,
+                                          pessoas=sorteio.randint(1, 5), agora=momento)
+        else:
+            comanda = comandas.abrir_balcao(conexao, sorteio.choice(CLIENTES_BALCAO), garcom.id, agora=momento)
+
+        if sorteio.random() < 0.04:  # cliente desistiu antes de pedir
+            comandas.cancelar_comanda(conexao, comanda.id, garcom.id, agora=momento + timedelta(minutes=5))
+            momento += timedelta(minutes=10)
+            continue
+
+        for _ in range(sorteio.randint(1, 5)):
+            momento += timedelta(minutes=sorteio.randint(2, 12))
+            produto = sorteio.choice(lista_produtos)
+            item = comandas.lancar_item(conexao, comanda.id, produto.id, garcom.id, sorteio.choice(QUANTIDADES),
+                                        agora=momento).item
+            if sorteio.random() < 0.06:  # lançou errado e tirou logo em seguida
+                comandas.remover_item(conexao, item.id, garcom.id, agora=momento + timedelta(seconds=40))
+            elif sorteio.random() < 0.04:  # percebeu depois: só cancelando
+                comandas.cancelar_item(conexao, item.id, sorteio.choice(["Cliente desistiu", "Lançado errado"]),
+                                       garcom.id, autorizacao, agora=momento + timedelta(minutes=10))
+
+        conta = comandas.calcular_conta(conexao, comanda.id)
+        if conta.subtotal_centavos == 0:
+            comandas.cancelar_comanda(conexao, comanda.id, garcom.id, agora=momento + timedelta(minutes=1))
+            continue
+        momento += timedelta(minutes=sorteio.randint(15, 40))
+        if comanda.tipo == "mesa" and sorteio.random() < 0.5:
+            comandas.marcar_conta_pedida(conexao, comanda.id, garcom.id, agora=momento)
+        if com_desconto and conta.subtotal_centavos >= 3000 and sorteio.random() < 0.15:
+            pagamentos.aplicar_desconto(conexao, comanda.id, sorteio.choice([500, 1000]),
+                                        sorteio.choice(["Cliente frequente", "Demora no pedido"]),
+                                        garcom.id, autorizacao, agora=momento)
+
+        saldo = comandas.calcular_conta(conexao, comanda.id).saldo_centavos
+        if saldo >= 2000 and sorteio.random() < 0.06:  # parte passada no cartão errado e estornada
+            errado = pagamentos.registrar_pagamento(conexao, comanda.id, "credito", saldo // 2, garcom.id,
+                                                    agora=momento).pagamento
+            pagamentos.estornar_pagamento(conexao, errado.id, "Passou no crédito, era débito", garcom.id,
+                                          autorizacao, agora=momento + timedelta(minutes=2))
+            momento += timedelta(minutes=3)
+        saldo = comandas.calcular_conta(conexao, comanda.id).saldo_centavos
+        partes = 1 if sorteio.random() < 0.6 else sorteio.randint(2, 3)
+        for parte in range(partes, 0, -1):
+            if saldo <= 0:
+                break
+            valor = saldo if parte == 1 else max(100, saldo // parte // 100 * 100)
+            momento += timedelta(minutes=sorteio.randint(1, 5))
+            _pagar(conexao, sorteio, comanda.id, _sortear_forma(sorteio), valor, garcom, momento)
+            saldo -= valor
+        vendas += 1
+        momento += timedelta(minutes=sorteio.randint(1, 8))
+    return vendas
 
 
 def popular(conexao, hoje=None, dias=14, semente=42):
@@ -107,8 +191,13 @@ def popular(conexao, hoje=None, dias=14, semente=42):
                                    estoque_inicial=estoque, estoque_minimo=minimo, agora=inicio)
     lista_produtos = produtos.listar_produtos(conexao)
 
-    # --- Dias passados: caixa aberto às 18h e fechado às 2h, com movimentos ---
+    # O desconto vem desligado; na demonstração o gerente liga para as noites passadas
+    # e desliga no fim, deixando como no padrão (os dois registros ficam na auditoria).
+    configuracoes.definir_desconto_permitido(conexao, True, gerente.id, autorizacao, agora=inicio)
+
+    # --- Dias passados: caixa às 18h, vendas, conferência e fechamento às 2h ---
     caixas_fechados = 0
+    vendas = 0
     for atras in range(dias, 0, -1):
         dia = hoje - timedelta(days=atras)
         if dia.weekday() == 0:  # segunda: bar fechado
@@ -122,11 +211,14 @@ def popular(conexao, hoje=None, dias=14, semente=42):
         if sorteio.random() < 0.4:
             caixa.registrar_sangria(conexao, sorteio.choice([3000, 5000]), "Pagamento de fornecedor (gelo)",
                                     responsavel.id, autorizacao, agora=abertura + timedelta(hours=3))
-        if dia.weekday() in (2, 4):  # quarta e sexta: chega mercadoria
-            for produto in sorteio.sample(lista_produtos, 4):
-                produtos.registrar_entrada(conexao, produto.id, sorteio.choice([6, 12, 24]), responsavel.id,
-                                           custo_unitario_centavos=produto.preco_centavos * 45 // 100,
-                                           observacao="Compra semanal", agora=abertura - timedelta(hours=2))
+        if dia.weekday() in (2, 4):  # quarta e sexta: chega mercadoria para o que está abaixo do mínimo
+            for produto in produtos.listar_produtos(conexao):
+                if produto.estoque < produto.estoque_minimo and sorteio.random() < 0.85:
+                    quantidade = produto.estoque_minimo * 3 - min(produto.estoque, 0)
+                    produtos.registrar_entrada(conexao, produto.id, quantidade, responsavel.id,
+                                               custo_unitario_centavos=produto.preco_centavos * 45 // 100,
+                                               observacao="Compra semanal", agora=abertura - timedelta(hours=2))
+        vendas += _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto=True)
         esperado = caixa.calcular_esperado(conexao, caixa.exigir_caixa_aberto(conexao).id)
         contado = dict(esperado)
         contado["dinheiro"] = max(0, esperado["dinheiro"] + sorteio.choice([0, 0, 0, -500, -200, 300, 1000]))
@@ -134,6 +226,9 @@ def popular(conexao, hoje=None, dias=14, semente=42):
                      observacao=None if contado == esperado else "Diferença conferida",
                      agora=datetime.combine(dia + timedelta(days=1), time(2, 0)))
         caixas_fechados += 1
+
+    configuracoes.definir_desconto_permitido(conexao, False, gerente.id, autorizacao,
+                                             agora=datetime.combine(hoje, time(12, 0)))
 
     # --- Perdas e ajustes de estoque ---
     por_nome = {p.nome: p for p in produtos.listar_produtos(conexao)}
@@ -161,6 +256,8 @@ def popular(conexao, hoje=None, dias=14, semente=42):
     errado = lancar(mesa2, "Gin Tônica", minutos_atras=39)
     comandas.cancelar_item(conexao, errado.id, "Lançado na mesa errada", bruno.id, autorizacao,
                            agora=agora - timedelta(minutes=20))
+    # Uma pessoa da mesa 2 já pagou a parte dela e foi embora.
+    pagamentos.registrar_pagamento(conexao, mesa2.id, "pix", 3200, ana.id, agora=agora - timedelta(minutes=15))
 
     mesa5 = comandas.abrir_mesa(conexao, 5, bruno.id, pessoas=2, agora=agora - timedelta(minutes=70))
     lancar(mesa5, "Heineken Long Neck", 3, por=bruno, minutos_atras=65)
@@ -183,6 +280,7 @@ def popular(conexao, hoje=None, dias=14, semente=42):
         "usuarios": [(n, p, perfil) for n, p, perfil in USUARIOS_DEMO],
         "produtos": len(produtos.listar_produtos(conexao)),
         "caixas_fechados": caixas_fechados,
+        "vendas": vendas,
         "comandas_abertas": len(comandas.listar_abertas(conexao)),
     }
 
@@ -235,7 +333,7 @@ def main(argv=None):
 
     print("\nDados de demonstração criados:")
     print(f"  {resumo['produtos']} produtos ativos")
-    print(f"  {resumo['caixas_fechados']} caixas fechados nos dias anteriores")
+    print(f"  {resumo['caixas_fechados']} caixas fechados nos dias anteriores, com {resumo['vendas']} vendas")
     print(f"  caixa de hoje aberto com {resumo['comandas_abertas']} comandas em andamento")
     print("\nUsuários (nome / PIN):")
     for nome, pin, perfil in resumo["usuarios"]:

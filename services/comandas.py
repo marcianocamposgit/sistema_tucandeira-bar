@@ -121,8 +121,11 @@ def calcular_conta(conexao, comanda_id):
 
 
 def _exigir_conta_coberta(conexao, comanda_id):
-    """Depois de uma alteração: a conta não pode ficar menor que o já pago."""
-    if calcular_conta(conexao, comanda_id).saldo_centavos < 0:
+    """Depois de uma alteração: a conta não pode ficar menor que o desconto nem que o já pago."""
+    conta = calcular_conta(conexao, comanda_id)
+    if conta.desconto_centavos > conta.subtotal_centavos:
+        raise DadosInvalidosError("O desconto ficaria maior que a conta. Remova o desconto antes.")
+    if conta.saldo_centavos < 0:
         raise TotalAbaixoDoPagoError()
 
 

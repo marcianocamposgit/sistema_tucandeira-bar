@@ -85,6 +85,11 @@ class ComandaComPagamentosError(ErroDeNegocio):
         super().__init__(mensagem)
 
 
+class DescontoNaoPermitidoError(ErroDeNegocio):
+    def __init__(self, mensagem="O desconto está desativado. Só o gerente pode ativá-lo nas configurações."):
+        super().__init__(mensagem)
+
+
 class TotalAbaixoDoPagoError(ErroDeNegocio):
     def __init__(self, mensagem="A conta ficaria menor que o valor já pago. Estorne um pagamento antes."):
         super().__init__(mensagem)
