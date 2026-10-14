@@ -33,7 +33,10 @@ Estrutura de pastas, `config.py` (com `PASTA_DADOS` separada do programa), `data
 
 ---
 
-## Etapa 2 — Models e services com testes
+## Etapa 2 — Models e services com testes ✅ concluída
+
+Models (dataclasses) em `models/`; services sem Flask: `erros`, `comum` (relógio injetável, validações, auditoria), `usuarios`, `produtos`, `caixa`, `comandas`, `configuracoes` (couvert e dia de show). Ações de gerente recebem `AutorizacaoGerente(gerente_id, pin)` e o próprio service confere o PIN. `scripts/popular_demo.py` (com `--recriar`) cria usuários, produtos, movimentos de estoque, 14 dias de caixas abertos e fechados e comandas em andamento hoje — as vendas no passado entram na Etapa 6. 98 testes pytest. O prompt original fica abaixo como registro.
+
 
 > Crie os models como dataclasses e os services de regra de negócio, **sem nenhum import de Flask**, cada um com testes pytest usando banco temporário. Exceções próprias num módulo comum (ex.: `services/erros.py`: `CaixaFechadoError`, `PermissaoNegadaError`, `PinInvalidoError`, `ComandaFechadaError`, `PrazoRemocaoExpiradoError`...).
 > - **services/usuarios.py:** cadastrar (nome único, PIN de 4 dígitos, perfil Operador ou Gerente), editar, trocar PIN, desativar, listar ativos para a tela de login, `autenticar(usuario_id, pin)`, `listar_gerentes()` e `autorizar_gerente(gerente_id, pin)` que devolve o gerente ou lança `PermissaoNegadaError`. PIN com hash + salt (`hashlib.pbkdf2_hmac`). PINs podem se repetir entre usuários e nenhuma mensagem pode revelar que um PIN já existe. Não permitir desativar o último gerente.

@@ -29,7 +29,7 @@ python servidor.py
 - O servidor escuta em `0.0.0.0` na porta definida em `config.py` (`PORTA`, padrão 5000).
 - No computador servidor: `http://localhost:5000`. Nos tablets: `http://<IP-fixo-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`).
 - Testes: `python -m pytest`.
-- Dados de demonstração no banco de desenvolvimento (a partir da Etapa 2): `python scripts/popular_demo.py`.
+- Dados de demonstração no banco de desenvolvimento: `python scripts/popular_demo.py` (banco sem usuários) ou `python scripts/popular_demo.py --recriar` (guarda um backup e recomeça do zero). Usuários criados: Gerente Demo (1234), Ana (1111), Bruno (2222).
 - Regerar as imagens da logo depois de trocar `assets/logo.png`: `python scripts/gerar_imagens.py`.
 
 Dependências: Python 3.14 (instalado: 3.14.4), Flask, waitress, Pillow (gerar ícones do PWA), pytest. SQLite é nativo (módulo `sqlite3`). Tudo listado no `requirements.txt`.

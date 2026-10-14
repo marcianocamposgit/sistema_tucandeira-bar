@@ -52,6 +52,10 @@ FORMAS_PAGAMENTO = {
     "pix": "PIX",
 }
 
+# === SEGURANÇA ===
+# Iterações do PBKDF2 para guardar os PINs (quanto maior, mais lento de quebrar).
+ITERACOES_PIN = 200_000
+
 # === SESSÃO E TELAS ===
 TEMPO_SESSAO_MINUTOS = 15
 INTERVALO_ATUALIZACAO_MESAS = 5  # segundos

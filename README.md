@@ -76,11 +76,14 @@ Para rodar os testes:
 python -m pytest
 ```
 
-Para encher o banco de **desenvolvimento** com dados de demonstração (usuários, produtos e dias de vendas no passado), disponível a partir da Etapa 2 do roteiro — o comando se recusa a rodar num banco de produção:
+Para encher o banco de **desenvolvimento** com dados de demonstração (usuários, produtos e dias de vendas no passado), o comando se recusa a rodar num banco de produção:
 
 ```
-python scripts/popular_demo.py
+python scripts/popular_demo.py            # num banco ainda sem usuários
+python scripts/popular_demo.py --recriar   # guarda um backup e recomeça do zero
 ```
+
+Usuários de demonstração (nome / PIN): Gerente Demo / 1234, Ana / 1111, Bruno / 2222.
 
 ## Como acessar
 
