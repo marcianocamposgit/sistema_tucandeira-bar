@@ -46,12 +46,15 @@ tucandeira-bar/
 ├── main.py              # só inicializa o banco e abre a tela principal
 ├── config.py            # cores, fontes, NUM_MESAS, caminhos (pathlib, relativo ao projeto)
 ├── database.py          # conexão SQLite, criação das tabelas, carga inicial do cardápio
-├── models/              # dataclasses: Produto, Comanda, ItemComanda, Venda, ItemVenda
+├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
 ├── services/            # regras de negócio, SEM nenhum import de tkinter
+│   ├── usuarios.py
 │   ├── produtos.py
+│   ├── caixa.py
 │   ├── comandas.py
 │   ├── pagamentos.py
-│   └── relatorios.py
+│   ├── relatorios.py
+│   └── backup.py
 ├── views/               # só interface; chama services, nunca acessa o banco direto
 ├── data/tucandeira.db   # banco (não versionar)
 ├── assets/logo.png
@@ -61,11 +64,11 @@ tucandeira-bar/
 ### Regras de arquitetura
 
 - **Views nunca fazem `from main import`.** Recebem o que precisam por parâmetro ou chamam os services.
-- **Services não usam `messagebox` nem nada de Tkinter.** Em caso de erro, lançam exceção (ex.: `EstoqueInsuficienteError`) e a view decide como mostrar.
+- **Services não usam `messagebox` nem nada de Tkinter.** Em caso de erro, lançam exceção (ex.: `CaixaFechadoError`, `PermissaoNegadaError`) e a view decide como mostrar.
 - Caminhos de arquivo sempre com `pathlib.Path(__file__).resolve().parent`.
 - Valores monetários exibidos no formato `R$ 1.234,56`. Criar uma função `formatar_moeda()` em um único lugar.
 - Datas gravadas no banco em ISO (`YYYY-MM-DD HH:MM:SS`).
-- O estado das mesas vem do banco: mesa ocupada = existe comanda aberta para ela.
+- O estado das mesas vem do banco: mesa ocupada = existe comanda aberta para ela; "conta pedida" é um status da comanda.
 
 ## Regras de trabalho
 
@@ -75,9 +78,30 @@ tucandeira-bar/
 - Nunca apagar nem recriar o arquivo `data/tucandeira.db` com dados reais; alterações de estrutura devem preservar os dados.
 - Manter o visual atual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Impact nos títulos).
 
-## Decisões em aberto (confirmar com o Marciano)
+## Decisões tomadas
 
-- Produto sem estoque: bloquear o lançamento ou só avisar?
-- Cobrar taxa de serviço de 10% nas mesas? Opcional por conta?
-- Permitir dividir a conta entre formas de pagamento (ex.: parte PIX, parte dinheiro)?
-- Número de mesas: manter 8 fixo ou configurável?
+- **Produto sem estoque:** avisar e permitir a venda. O estoque pode ficar negativo, e isso aparece destacado nos relatórios.
+- **Taxa de serviço de 10%:** ativada por padrão nas mesas, desativada no balcão. Pode ser removida no pagamento (exige PIN de gerente).
+- **Pagamento dividido:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro).
+- **Número de mesas:** configurável no `config.py` (`NUM_MESAS`), padrão 8.
+- **Remover x cancelar item:** o operador pode remover um item sem PIN até 2 minutos depois de lançá-lo (prazo configurável no `config.py`). Depois disso, só por cancelamento, que exige motivo e PIN de gerente e fica registrado.
+
+## Requisitos do sistema
+
+### Versão 2.0
+
+- **Usuários:** login por PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, dar desconto, remover taxa de serviço, sangria, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
+- **Caixa:** o sistema só permite vendas com caixa aberto. Abertura com valor inicial (fundo de troco). Sangria e suprimento com motivo. Fechamento com conferência: valor esperado x valor contado por forma de pagamento, mostrando a diferença.
+- **Mesas:** status livre, ocupada e "conta pedida" (cores diferentes); número de pessoas na mesa; transferir comanda para outra mesa; juntar mesas.
+- **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado.
+- **Pagamento:** taxa de 10% (regra acima); couvert artístico opcional por pessoa, com valor configurável e ativado no dia de show; desconto em R$ ou % com motivo; dividir entre formas de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
+- **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; entrada de mercadoria registrada.
+- **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
+- **Segurança dos dados:** backup automático do banco ao abrir o sistema, mantendo os 7 últimos.
+
+### Versão 2.1 (futuro — NÃO implementar agora)
+
+- Impressão de comanda e cupom não fiscal em impressora térmica.
+- Emissão de NFC-e via serviço terceirizado.
+- Vários computadores em rede.
+- Cardápio digital por QR Code.
