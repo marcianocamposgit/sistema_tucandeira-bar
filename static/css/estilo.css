@@ -1,0 +1,191 @@
+/* ============================================================
+   Tucandeira Rock Bar — estilo comum
+   CSS conservador para o Chrome antigo do tablet: sem :has(),
+   sem aninhamento, sem container queries, sem dvh, sem gap em flex.
+   ============================================================ */
+
+@font-face {
+    font-family: "Anton";
+    src: url("../fonts/Anton-Regular.woff2") format("woff2"),
+         url("../fonts/Anton-Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Cores e medidas do bar: definidas só aqui. */
+:root {
+    --verde: #004d26;
+    --verde-escuro: #003319;
+    --preto: #000000;
+    --amarelo: #ffcc00;
+    --branco: #ffffff;
+    --cinza: #c0c0c0;
+
+    --mesa-livre: #1e8c3a;
+    --mesa-ocupada: #c62828;
+    --mesa-conta-pedida: #ffcc00;
+
+    --toque-minimo: 48px;
+    --fonte-titulo: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    --fonte-texto: Roboto, "Segoe UI", Arial, sans-serif;
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: #004d26;
+    background: var(--verde);
+    color: #ffffff;
+    color: var(--branco);
+    font-family: Roboto, "Segoe UI", Arial, sans-serif;
+    font-family: var(--fonte-texto);
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* === Cabeçalho === */
+.cabecalho {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    min-height: 64px;
+    padding: 8px 16px;
+    background: #000000;
+    background: var(--preto);
+    border-bottom: 3px solid #ffcc00;
+    border-bottom: 3px solid var(--amarelo);
+}
+
+.cabecalho-marca {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    min-height: 48px;
+    min-height: var(--toque-minimo);
+    color: #ffcc00;
+    color: var(--amarelo);
+    text-decoration: none;
+}
+
+.cabecalho-logo {
+    display: block;
+    margin-right: 12px;
+}
+
+.cabecalho-nome {
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 24px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* === Conteúdo === */
+.conteudo {
+    padding: 16px;
+}
+
+.titulo {
+    margin: 0 0 8px;
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-weight: normal;
+    font-size: 40px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.subtitulo {
+    margin: 0;
+    color: #c0c0c0;
+    color: var(--cinza);
+}
+
+/* === Botões === */
+.botao {
+    display: inline-block;
+    min-width: 48px;
+    min-width: var(--toque-minimo);
+    min-height: 48px;
+    min-height: var(--toque-minimo);
+    padding: 12px 20px;
+    border: 2px solid #ffcc00;
+    border: 2px solid var(--amarelo);
+    border-radius: 8px;
+    background: #000000;
+    background: var(--preto);
+    color: #ffffff;
+    color: var(--branco);
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 20px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.botao:active {
+    background: #ffcc00;
+    background: var(--amarelo);
+    color: #000000;
+    color: var(--preto);
+}
+
+.botao[disabled] {
+    opacity: 0.5;
+}
+
+/* === Página inicial === */
+.inicio {
+    max-width: 600px;
+    margin: 32px auto;
+    text-align: center;
+}
+
+.inicio-logo {
+    display: block;
+    margin: 0 auto 24px;
+}
+
+/* === Celular (a partir de 360px) === */
+@media (max-width: 599px) {
+    body {
+        font-size: 16px;
+    }
+    .cabecalho-nome {
+        font-size: 20px;
+    }
+    .titulo {
+        font-size: 30px;
+    }
+    .inicio {
+        margin-top: 16px;
+    }
+}

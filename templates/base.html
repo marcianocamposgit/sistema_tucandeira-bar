@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#004d26">
+    <title>{% block titulo %}Tucandeira Rock Bar{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+    <header class="cabecalho">
+        <a href="{{ url_for('principal.inicio') }}" class="cabecalho-marca">
+            <img class="cabecalho-logo"
+                 src="{{ url_for('static', filename='img/logo-56.png') }}"
+                 srcset="{{ url_for('static', filename='img/logo-56.png') }} 1x, {{ url_for('static', filename='img/logo-112.png') }} 2x"
+                 width="59" height="56" alt="">
+            <span class="cabecalho-nome">Tucandeira Rock Bar</span>
+        </a>
+    </header>
+    <main class="conteudo">
+        {% block conteudo %}{% endblock %}
+    </main>
+</body>
+</html>

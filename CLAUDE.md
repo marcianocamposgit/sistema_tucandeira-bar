@@ -29,6 +29,8 @@ python servidor.py
 - O servidor escuta em `0.0.0.0` na porta definida em `config.py` (`PORTA`, padrão 5000).
 - No computador servidor: `http://localhost:5000`. Nos tablets: `http://<IP-fixo-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`).
 - Testes: `python -m pytest`.
+- Dados de demonstração no banco de desenvolvimento (a partir da Etapa 2): `python scripts/popular_demo.py`.
+- Regerar as imagens da logo depois de trocar `assets/logo.png`: `python scripts/gerar_imagens.py`.
 
 Dependências: Python 3.14 (instalado: 3.14.4), Flask, waitress, Pillow (gerar ícones do PWA), pytest. SQLite é nativo (módulo `sqlite3`). Tudo listado no `requirements.txt`.
 
@@ -36,7 +38,7 @@ Dependências: Python 3.14 (instalado: 3.14.4), Flask, waitress, Pillow (gerar �
 
 - Mesas exibidas em grade (livre, ocupada e conta pedida, com cores diferentes) + atendimento de Balcão / Para Viagem
 - Comanda por mesa: lançar itens, ver itens, remover itens, fechar conta
-- Pagamento em Dinheiro, Cartão ou PIX
+- Pagamento em Dinheiro, Débito, Crédito ou PIX, inclusive parcial (cada pessoa paga a sua parte)
 - Cardápio com categorias (Bebida, Tira-Gosto, Lanche, Cigarro) e controle de estoque
 - Cadastro de produtos
 - Relatórios de caixa (dia, semana, mês)
@@ -92,6 +94,7 @@ tucandeira-bar/
 ├── assets/logo.png      # logo original
 ├── data/tucandeira.db   # banco (não versionar)
 ├── data/backups/        # backups automáticos (não versionar)
+├── scripts/            # utilitários: gerar_imagens.py, popular_demo.py, scripts .ps1 de instalação
 ├── legado_tkinter/      # versão antiga, só referência
 └── tests/               # pytest para os services (e alguns testes de rotas com o test client do Flask)
 ```
@@ -130,6 +133,20 @@ tucandeira-bar/
 - Logo redimensionada e otimizada para a web (versões em `static/img/`, geradas por script com Pillow a partir de `assets/logo.png`, no tamanho em que são exibidas), nunca o arquivo original.
 - Rotas JSON de atualização devolvem só o necessário (estado das mesas, não a página inteira).
 
+### Banco de dados (esquema)
+
+O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os services:
+
+- Dinheiro sempre em centavos (`..._centavos`). Nome e preço do produto são copiados no item da comanda e da venda.
+- **Mesa ocupada** = linha em `comanda_mesas` com `liberada_em IS NULL`; um índice único parcial impede duas comandas na mesma mesa. Transferir e juntar mesas mexem só nessa tabela.
+- Status da comanda: `aberta`, `conta_pedida`, `paga`, `unida` (foi juntada a outra, `unida_a`), `cancelada`.
+- Cada toque em "+" é uma linha em `itens_comanda` com a própria hora (necessário para a regra dos 2 minutos). Remoções e cancelamentos ficam em `item_ajustes`; a quantidade atual do item já desconta os ajustes.
+- Taxa de serviço, couvert e descontos ficam **na comanda**, porque ela recebe pagamentos antes de fechar. Total = subtotal + taxa + couvert − descontos; já pago = soma dos `pagamentos` não estornados; saldo = total − já pago.
+- Ao zerar o saldo, na mesma transação: cria `vendas` + `itens_venda`, baixa o estoque, marca a comanda como `paga` e libera as mesas. `vendas.comanda_id` é único (nunca duas vendas da mesma comanda). Lançar item depois de um pagamento parcial é permitido; remover, cancelar ou dar desconto que deixe o total abaixo do já pago, não.
+- Só um caixa com status `aberto` (índice único parcial). Conferência = soma dos pagamentos não estornados do caixa por forma.
+- `configuracoes.ambiente` (`desenvolvimento` ou `producao`) é gravado na criação do banco e nunca muda. `desenvolvimento` só quando o banco é criado pelo código-fonte na pasta `data/` do projeto.
+- Mudança de estrutura = nova função em `MIGRACOES` (nunca alterar as antigas). O servidor faz backup antes de migrar.
+
 ### Regras de arquitetura
 
 - **Services não importam Flask** (nem `request`, `session`, `flash`, `abort`). Recebem dados simples e a conexão/usuário por parâmetro; em caso de erro lançam exceções próprias (ex.: `CaixaFechadoError`, `PermissaoNegadaError`, `PrazoRemocaoExpiradoError`) e a rota decide como responder.
@@ -147,9 +164,9 @@ tucandeira-bar/
 ### Segurança
 
 - Uso **apenas na rede local do bar**. Nunca expor à internet (sem redirecionamento de porta no roteador, sem túneis). A regra de firewall do Windows libera a porta só para a rede privada.
-- Login por PIN de 4 dígitos com sessão Flask (cookie assinado com `SECRET_KEY` gerada na instalação e guardada na pasta de dados, fora do git — `data/secret_key` no desenvolvimento). A sessão expira após um tempo sem uso (`TEMPO_SESSAO_MINUTOS` em `config.py`, padrão 15) e volta para a tela de login.
-- Ações de gerente pedem o PIN do gerente **na hora**, mesmo que o gerente já esteja logado no tablet; a autorização vale só para aquela ação e registra qual gerente autorizou.
-- Limite de tentativas de PIN erradas (ex.: bloqueio de 1 minuto após 5 erros seguidos no mesmo tablet).
+- Login: tocar no **nome** do usuário e digitar o **PIN** de 4 dígitos. PINs podem se repetir entre usuários, e o sistema **nunca** informa que um PIN "já está em uso". Sessão Flask (cookie assinado com `SECRET_KEY` gerada na instalação e guardada na pasta de dados, fora do git — `data/secret_key` no desenvolvimento). A sessão expira após um tempo sem uso (`TEMPO_SESSAO_MINUTOS` em `config.py`, padrão 15) e volta para a tela de login.
+- Ações de gerente pedem a autorização **na hora** (escolher o gerente na lista e digitar o PIN dele), mesmo que o gerente já esteja logado no aparelho; a autorização vale só para aquela ação e registra qual gerente autorizou.
+- Limite de tentativas de PIN erradas: bloqueio de 1 minuto após 5 erros seguidos, contado por usuário e por aparelho (em memória; zera se o servidor reiniciar).
 - PIN guardado com hash + salt (`hashlib.pbkdf2_hmac`), nunca em texto puro.
 - Formulários com proteção CSRF (token na sessão). Toda entrada validada no servidor, nunca só no JavaScript.
 
@@ -166,7 +183,12 @@ tucandeira-bar/
 
 - **Produto sem estoque:** avisar e permitir a venda. O estoque pode ficar negativo, e isso aparece destacado nos relatórios.
 - **Taxa de serviço de 10%:** ativada por padrão nas mesas, desativada no balcão. Pode ser removida no pagamento (exige PIN de gerente).
-- **Pagamento dividido:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro).
+- **Pagamento dividido e parcial:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro) e aos poucos (uma pessoa paga a parte dela e vai embora). A comanda mostra total, já pago e saldo; a venda é fechada quando o saldo chega a zero. Cada pagamento registra quem recebeu.
+- **Formas de pagamento:** Dinheiro, Débito, Crédito e PIX (também separadas na conferência do caixa).
+- **Estorno de pagamento:** enquanto a comanda não estiver paga, um pagamento lançado errado pode ser estornado, com motivo e PIN de gerente. O pagamento não é apagado: fica marcado como estornado e deixa de contar no já pago e na conferência do caixa.
+- **Comanda cancelada:** sem itens (ou com todos removidos/cancelados) e sem pagamentos, o operador cancela sozinho, liberando a mesa. Com itens, o cancelamento exige motivo e PIN de gerente. Comanda cancelada não gera venda, não baixa estoque e não bloqueia o fechamento do caixa.
+- **Fechamento do caixa:** bloqueado enquanto houver comandas abertas ou com conta pedida; o sistema mostra quais são.
+- **Estoque:** entradas, perdas e ajustes de contagem ficam em `movimentos_estoque`, com motivo, usuário e data. Perda e ajuste exigem PIN de gerente. A baixa por venda vem de `itens_venda`.
 - **Número de mesas:** configurável no `config.py` (`NUM_MESAS`), padrão 8.
 - **Remover x cancelar item:** o operador pode remover um item sem PIN até 2 minutos depois de lançá-lo (prazo configurável no `config.py`). Depois disso, só por cancelamento, que exige motivo e PIN de gerente e fica registrado.
 - **Plataforma:** aplicação web na rede local (Flask + waitress), acessada por tablets e pelo computador do caixa. A versão Tkinter foi abandonada (tag `v1.0-tkinter`).
@@ -175,14 +197,15 @@ tucandeira-bar/
 
 ### Versão 2.0
 
-- **Usuários:** login por PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, dar desconto, remover taxa de serviço, sangria, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
-- **Caixa:** o sistema só permite vendas com caixa aberto. Abertura com valor inicial (fundo de troco). Sangria e suprimento com motivo. Fechamento com conferência: valor esperado x valor contado por forma de pagamento, mostrando a diferença.
+- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos; perfis Operador e Gerente. Ações que exigem PIN de gerente: cancelar item, cancelar comanda com itens, dar desconto, remover taxa de serviço, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários. Toda operação registra quem fez e quando.
+- **Caixa:** o sistema só permite vendas com caixa aberto. Abertura com valor inicial (fundo de troco). Sangria e suprimento com motivo. Fechamento com conferência: valor esperado x valor contado por forma de pagamento (dinheiro, débito, crédito, PIX), mostrando a diferença. Não fecha com comandas abertas ou com conta pedida.
 - **Mesas:** status livre, ocupada e "conta pedida" (cores diferentes); número de pessoas na mesa; transferir comanda para outra mesa; juntar mesas.
-- **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado.
-- **Pagamento:** taxa de 10% (regra acima); couvert artístico opcional por pessoa, com valor configurável e ativado no dia de show; desconto em R$ ou % com motivo; dividir entre formas de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
-- **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; entrada de mercadoria registrada.
+- **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado; cancelamento da comanda inteira (regra acima).
+- **Pagamento:** taxa de 10% (regra acima); couvert artístico opcional por pessoa, com valor configurável e ativado no dia de show; desconto em R$ ou % com motivo; dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
+- **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; movimentos de estoque registrados (entrada de mercadoria, perda, ajuste de contagem).
 - **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
 - **Segurança dos dados:** backup automático do banco ao iniciar o servidor (e uma vez por dia enquanto ele estiver rodando), mantendo os 7 últimos.
+- **Dados de demonstração:** comando separado (`python scripts/popular_demo.py`) que popula o banco de desenvolvimento com usuários, produtos e dias de caixas e vendas no passado, para testar telas e relatórios. Recusa-se a rodar se o banco não for o de desenvolvimento.
 - **Acesso simultâneo:** vários tablets usando o sistema ao mesmo tempo, sem perder nem duplicar lançamentos (transações no banco), com a tela de mesas atualizada sozinha em todos eles.
 - **Tela de caixa:** uma tela de caixa (abertura, sangria/suprimento, pagamentos, fechamento) que também funcione bem no navegador do próprio computador servidor, com mouse e teclado, além do toque no tablet.
 

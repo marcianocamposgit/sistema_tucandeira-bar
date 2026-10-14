@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+<section class="inicio">
+    <img class="inicio-logo"
+         src="{{ url_for('static', filename='img/logo-200.png') }}"
+         srcset="{{ url_for('static', filename='img/logo-200.png') }} 1x, {{ url_for('static', filename='img/logo-400.png') }} 2x"
+         width="210" height="200" alt="Logo do Tucandeira Rock Bar">
+    <h1 class="titulo">Tucandeira Rock Bar</h1>
+    <p class="subtitulo">Sistema de Gestão — versão {{ versao }}</p>
+</section>
+{% endblock %}

@@ -10,12 +10,12 @@ Sistema web para gestão de bar: mesas, comandas, pagamentos, estoque, controle 
 
 - **Vários tablets ao mesmo tempo:** garçons lançam pedidos de qualquer tablet, inclusive na mesma comanda; a tela de mesas se atualiza sozinha em todos os aparelhos.
 - **Feito para toque:** botões grandes, teclado numérico na tela, funciona em retrato e paisagem. Funciona numa aba comum do navegador e, opcionalmente, pode ser instalado na tela inicial do tablet para abrir em tela cheia (PWA — veja "Abrir como aplicativo").
-- **Usuários:** login por PIN de 4 dígitos, perfis Operador e Gerente, sessão que expira após um tempo sem uso. Ações sensíveis (cancelar item, dar desconto, remover taxa de serviço, sangria, fechar caixa, cadastrar usuários) pedem o PIN do gerente na hora. Toda operação registra quem fez e quando.
-- **Caixa:** abertura com fundo de troco, sangria e suprimento com motivo, fechamento com conferência (valor esperado x valor contado por forma de pagamento). Vendas só com caixa aberto. A tela de caixa funciona também no navegador do computador servidor.
+- **Usuários:** login tocando no nome e digitando o PIN de 4 dígitos, perfis Operador e Gerente, sessão que expira após um tempo sem uso. Ações sensíveis (cancelar item ou comanda, dar desconto, remover taxa de serviço, estornar pagamento, sangria, perda e ajuste de estoque, fechar caixa, cadastrar usuários) pedem a autorização do gerente na hora. Toda operação registra quem fez e quando.
+- **Caixa:** abertura com fundo de troco, sangria e suprimento com motivo, fechamento com conferência (valor esperado x valor contado em dinheiro, débito, crédito e PIX), só depois de todas as comandas pagas ou canceladas. Vendas só com caixa aberto. A tela de caixa funciona também no navegador do computador servidor.
 - **Mesas:** número de mesas configurável (padrão 8), status livre, ocupada e conta pedida, número de pessoas, transferir comanda e juntar mesas.
 - **Comandas:** balcão / para viagem com várias comandas identificadas pelo nome do cliente, observação por item. Item removido sem PIN até 2 minutos após o lançamento; depois disso, só cancelamento com motivo e PIN de gerente.
-- **Pagamento:** taxa de serviço de 10% nas mesas (removível pelo gerente), couvert artístico por pessoa em dia de show, desconto em R$ ou %, divisão entre Dinheiro, Cartão e PIX, valor por pessoa e cálculo de troco.
-- **Produtos e estoque:** cadastro, edição e desativação, categorias editáveis, estoque mínimo com alerta, entrada de mercadoria. Produto sem estoque pode ser vendido (com aviso) e aparece destacado nos relatórios.
+- **Pagamento:** taxa de serviço de 10% nas mesas (removível pelo gerente), couvert artístico por pessoa em dia de show, desconto em R$ ou %, divisão entre Dinheiro, Débito, Crédito e PIX, pagamento parcial (cada um paga a sua parte, com saldo sempre visível), estorno de pagamento lançado errado, valor por pessoa e cálculo de troco.
+- **Produtos e estoque:** cadastro, edição e desativação, categorias editáveis, estoque mínimo com alerta, entrada de mercadoria, perda e ajuste de contagem. Produto sem estoque pode ser vendido (com aviso) e aparece destacado nos relatórios.
 - **Relatórios:** vendas por dia, semana, mês ou intervalo, total por forma de pagamento, produtos mais vendidos, cancelamentos e descontos, estoque negativo ou abaixo do mínimo, histórico de fechamentos de caixa e exportação para CSV.
 - **Segurança dos dados:** backup automático do banco, mantendo os 7 últimos.
 
@@ -76,6 +76,12 @@ Para rodar os testes:
 python -m pytest
 ```
 
+Para encher o banco de **desenvolvimento** com dados de demonstração (usuários, produtos e dias de vendas no passado), disponível a partir da Etapa 2 do roteiro — o comando se recusa a rodar num banco de produção:
+
+```
+python scripts/popular_demo.py
+```
+
 ## Como acessar
 
 - **No próprio computador servidor (caixa):** abra o navegador em `http://localhost:5000`.
@@ -121,6 +127,7 @@ tucandeira-bar/
 ├── static/              # CSS, JavaScript, fonte Anton, ícones e manifest do PWA
 ├── data/                # banco de dados e backups (não versionados)
 ├── assets/              # logo e imagens
+├── scripts/            # utilitários (imagens da logo, dados de demonstração, instalação)
 ├── legado_tkinter/      # versão antiga em Tkinter (só referência)
 └── tests/               # testes automatizados (pytest)
 ```

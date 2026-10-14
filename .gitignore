@@ -1,6 +1,12 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 
-# Banco de dados (contém dados reais, não versionar)
+# Pasta de dados (contém dados reais, não versionar)
 data/*.db
+data/*.db-wal
+data/*.db-shm
+data/backups/
+data/logs/
+data/secret_key
