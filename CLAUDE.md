@@ -1,53 +1,64 @@
 # Tucandeira Rock Bar — Sistema de Gestão
 
-Sistema desktop de gestão para bar, em Python + Tkinter. Autor: Marciano Campos.
-Todo o código, comentários, nomes de variáveis e mensagens ao usuário devem ser em **português do Brasil**.
+Sistema web de gestão para bar, em Python + Flask, usado pelo navegador de tablets na rede local do bar. Um computador do bar é o servidor; os tablets dos garçons e o próprio computador do caixa acessam pelo Wi-Fi/rede local. Autor: Marciano Campos.
+Todo o código, comentários, nomes de variáveis, mensagens ao usuário e textos das telas devem ser em **português do Brasil**.
 
 ## Como rodar
 
+Desenvolvimento (servidor de desenvolvimento do Flask, com recarga automática):
+
 ```
 cd C:\tucandeira-bar
-python main.py
+python -m pip install -r requirements.txt
+python app.py
 ```
 
-Dependências: Python 3.14 (instalado: 3.14.4), Tkinter (nativo), Pillow (`pip install pillow`), SQLite (nativo, módulo `sqlite3`).
+Produção no bar (waitress, acessível pela rede local):
+
+```
+cd C:\tucandeira-bar
+python servidor.py
+```
+
+- O servidor escuta em `0.0.0.0` na porta definida em `config.py` (`PORTA`, padrão 5000).
+- No computador servidor: `http://localhost:5000`. Nos tablets: `http://<IP-fixo-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`).
+- Testes: `python -m pytest`.
+
+Dependências: Python 3.14 (instalado: 3.14.4), Flask, waitress, Pillow (gerar ícones do PWA), pytest. SQLite é nativo (módulo `sqlite3`). Tudo listado no `requirements.txt`.
 
 ## Funcionalidades do sistema
 
-- 8 mesas exibidas em grade (verde = livre, vermelho = ocupada) + atendimento de Balcão / Para Viagem
+- Mesas exibidas em grade (livre, ocupada e conta pedida, com cores diferentes) + atendimento de Balcão / Para Viagem
 - Comanda por mesa: lançar itens, ver itens, remover itens, fechar conta
 - Pagamento em Dinheiro, Cartão ou PIX
 - Cardápio com categorias (Bebida, Tira-Gosto, Lanche, Cigarro) e controle de estoque
 - Cadastro de produtos
 - Relatórios de caixa (dia, semana, mês)
 
-## Estado atual (antes da reestruturação)
+## Versão antiga (Tkinter) — só referência
 
-Toda a lógica e os dados ficam em memória dentro do `main.py`. As pastas `models`, `services`, `data` e `templates` estão vazias. As telas ficam em `views/`.
+A versão desktop em Tkinter foi preservada na tag git `v1.0-tkinter` e os arquivos estão em `legado_tkinter/` (`main.py` e `views/`). **Não alterar nem importar nada dessa pasta.** Ela serve apenas como referência do cardápio inicial (6 produtos e 4 categorias, em `legado_tkinter/main.py`) e do comportamento original.
 
-### Bugs conhecidos
+Falhas do legado que a versão web não pode repetir:
 
-1. **ImportError ao fechar conta:** `main.py` importa `escolher_forma_pagamento_view` de `views/tela_pagamento.py`, mas a função lá se chama `escolher_forma_pagamento` e não recebe o callback `confirmar_pagamento`.
-2. **`from main import ...` dentro das views** (`tela_pagamento.py`, `tela_principal.py`, `tela_relatorios.py`). Como o programa roda via `python main.py` (módulo `__main__`), isso carrega uma segunda cópia do `main.py`, com dados separados e sem `root_global`. Consequências: vendas registradas numa cópia que os relatórios não enxergam, e `NameError` ao atualizar as mesas.
-3. **Comanda não persiste:** em `tela_pedido.py` os itens ficam numa lista local da janela. Fechar a janela perde a comanda. `mesas_status` nunca vira `"ocupada"` e `pedidos_abertos` nunca é preenchido.
-4. **Estoque baixa ao clicar em "+"**, não no pagamento. Fechar sem pagar baixa estoque sem registrar venda.
-5. **Pagamento de balcão** remove sempre o último pedido aberto, não o que está sendo pago.
-6. **Venda não guarda os itens**, só total, forma de pagamento e tipo.
-7. **Relatório:** "Vendas registradas" mostra o total geral, não do período. `views/tela_relatorios.py` existe mas não é usado (o relatório está montado dentro do `main.py`).
-8. **`tela_principal.py`:** botão "Sobre" é criado dentro do loop das mesas (8 vezes); caminho da logo é absoluto (`C:\tucandeira-bar\assets\logo.png`); código de desenhar mesas duplicado em `criar_tela_principal` e `atualizar_tela_mesas`.
-9. **Tela de pedido:** total exibido como `28.0` em vez de `R$ 28,00`; texto de estoque não atualiza; layout do canvas (`side="left"`, `expand=True`) pode esconder o total e o botão "Fechar Conta".
-10. **Cadastro:** só adiciona produto; não edita, não exclui, não valida nome duplicado nem preço negativo.
-11. Constantes de cor repetidas em todos os arquivos.
+- Estado guardado em variáveis globais / memória: na web tudo fica no banco, pois cada tablet é um cliente separado e o servidor pode reiniciar.
+- Comanda que se perde ao fechar a tela: cada item lançado é gravado na hora.
+- Estoque baixando ao lançar o item: o estoque só baixa no pagamento.
+- Pagamento de balcão que fechava a comanda errada: toda operação recebe o id da comanda.
+- Venda que não guardava os itens: a venda grava itens, pagamentos, taxa, couvert, desconto e usuário.
+- Relatório mostrando total geral em vez do período.
+- Constantes (cores, caminhos) repetidas em vários arquivos e caminho absoluto da logo.
 
-## Arquitetura alvo
+## Arquitetura
 
 ```
 tucandeira-bar/
-├── main.py              # só inicializa o banco e abre a tela principal
-├── config.py            # cores, fontes, NUM_MESAS, caminhos (pathlib, relativo ao projeto)
-├── database.py          # conexão SQLite, criação das tabelas, carga inicial do cardápio
+├── app.py               # cria o app Flask (create_app), registra blueprints; roda o servidor de desenvolvimento
+├── servidor.py          # inicia o app com waitress (produção, rede local)
+├── config.py            # NUM_MESAS, PORTA, prazos, taxa, tempo de sessão, caminhos (pathlib)
+├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial
 ├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
-├── services/            # regras de negócio, SEM nenhum import de tkinter
+├── services/            # regras de negócio, SEM nenhum import de Flask
 │   ├── usuarios.py
 │   ├── produtos.py
 │   ├── caixa.py
@@ -55,28 +66,78 @@ tucandeira-bar/
 │   ├── pagamentos.py
 │   ├── relatorios.py
 │   └── backup.py
-├── views/               # só interface; chama services, nunca acessa o banco direto
+├── routes/              # blueprints Flask: recebem a requisição, chamam services, devolvem HTML/JSON
+│   ├── auth.py          # login/logout por PIN, autorização de gerente
+│   ├── mesas.py         # tela de mesas e comandas
+│   ├── caixa.py
+│   ├── pagamentos.py
+│   ├── produtos.py
+│   ├── relatorios.py
+│   └── usuarios.py
+├── templates/           # Jinja2 (base.html com o layout comum)
+├── static/
+│   ├── css/             # CSS próprio
+│   ├── js/              # JavaScript simples (sem frameworks pesados)
+│   ├── fonts/           # Anton-Regular.woff2 + OFL.txt (fonte dos títulos)
+│   ├── icones/          # ícones do PWA gerados a partir de assets/logo.png
+│   ├── manifest.webmanifest
+│   └── sw.js            # service worker mínimo (só para permitir instalar o PWA)
+├── assets/logo.png      # logo original
 ├── data/tucandeira.db   # banco (não versionar)
-├── assets/logo.png
-└── tests/               # pytest para os services
+├── data/backups/        # backups automáticos (não versionar)
+├── legado_tkinter/      # versão antiga, só referência
+└── tests/               # pytest para os services (e alguns testes de rotas com o test client do Flask)
 ```
+
+### Stack
+
+- **Servidor:** Flask. Em produção, waitress no Windows, `host="0.0.0.0"`, porta em `config.py`. O servidor de desenvolvimento do Flask nunca é usado no bar.
+- **Banco:** SQLite em `data/tucandeira.db`, com `PRAGMA journal_mode=WAL`, `PRAGMA foreign_keys=ON` e `busy_timeout` (ex.: 5000 ms). Uma conexão por requisição (aberta no `g` do Flask e fechada no fim). Toda operação que altera mais de uma tabela roda numa transação única (`BEGIN IMMEDIATE ... COMMIT`, com rollback em erro), pois vários tablets acessam ao mesmo tempo (ex.: dois garçons lançando na mesma comanda, ou um lançando enquanto o caixa recebe o pagamento).
+- **Telas:** templates Jinja2 em `templates/`, CSS próprio em `static/css/`, JavaScript simples em `static/js/` (sem React, Vue, jQuery ou similares). Tudo servido localmente — nada de CDN, o bar pode ficar sem internet.
+- **Atualização automática:** a tela de mesas consulta o servidor a cada poucos segundos (`INTERVALO_ATUALIZACAO_MESAS` em `config.py`, padrão 5 s) por uma rota JSON e redesenha as mesas, em todos os tablets. A tela da comanda aberta também se atualiza, para ver itens lançados por outro garçom.
+- **PWA:** `manifest.webmanifest` com `display: "fullscreen"` (ou `standalone`), cores do bar e ícones 192×192 e 512×512 gerados a partir de `assets/logo.png` (script com Pillow), para adicionar à tela inicial do tablet e abrir em tela cheia. Service worker mínimo; o sistema **não** funciona offline (precisa do servidor).
+  - **Limitação — contexto seguro:** service worker e "Instalar app" só funcionam em contexto seguro (HTTPS ou `localhost`). Acessando o servidor por `http://192.168.x.x`, o navegador do tablet pode não oferecer "Instalar app" nem abrir em tela cheia. Soluções (detalhadas na etapa de rede do `ROTEIRO.md`): 1ª opção, no Chrome do tablet, liberar o endereço do servidor em `chrome://flags` → "Insecure origins treated as secure"; 2ª opção, usar um navegador de quiosque em tela cheia.
+  - **O PWA é opcional:** o sistema precisa funcionar normalmente numa aba comum do navegador, sem o PWA instalado. O registro do service worker só é tentado quando `window.isSecureContext` for verdadeiro e `'serviceWorker' in navigator`, e uma falha nele nunca pode quebrar a página. Nenhuma funcionalidade pode depender do service worker nem do modo tela cheia.
+
+### Interface para tablet
+
+- Pensada para toque em tablet de 10": botões e áreas de toque com no mínimo 48×48 px, espaçamento entre botões, fontes legíveis à distância de um braço.
+- Nada que dependa de mouse (hover, clique direito, duplo clique) ou de teclado físico. PIN e valores são digitados em teclado numérico na tela; textos curtos (nome do cliente, observação, motivo) usam o teclado virtual do tablet ou botões de atalho.
+- Layout responsivo funcionando em retrato e paisagem (CSS grid/flex e media queries), sem rolagem horizontal. O total e o botão "Fechar Conta" ficam sempre visíveis na tela da comanda.
+- Confirmação para ações destrutivas (cancelar item, fechar caixa) e proteção contra toque duplo (botão desativado enquanto a requisição está em andamento).
+- Identidade visual mantida: fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, títulos na fonte **Anton**, logo do bar no topo.
+- **Fonte dos títulos (obrigatório):** tablets Android não têm a fonte Impact. Usar a fonte **Anton** (licença livre SIL Open Font License), como arquivo local em `static/fonts/` (`Anton-Regular.woff2` e o texto da licença `OFL.txt`), carregada com `@font-face` (`font-display: swap`) e declarada como `font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif` — Impact só como alternativa. Nunca carregar de CDN/Google Fonts.
+- Cores das mesas: livre, ocupada e conta pedida, definidas em variáveis CSS num único lugar (`static/css/`).
 
 ### Regras de arquitetura
 
-- **Views nunca fazem `from main import`.** Recebem o que precisam por parâmetro ou chamam os services.
-- **Services não usam `messagebox` nem nada de Tkinter.** Em caso de erro, lançam exceção (ex.: `CaixaFechadoError`, `PermissaoNegadaError`) e a view decide como mostrar.
+- **Services não importam Flask** (nem `request`, `session`, `flash`, `abort`). Recebem dados simples e a conexão/usuário por parâmetro; em caso de erro lançam exceções próprias (ex.: `CaixaFechadoError`, `PermissaoNegadaError`, `PrazoRemocaoExpiradoError`) e a rota decide como responder.
+- **Routes não acessam o banco direto** e não contêm regra de negócio: validam a entrada, chamam o service, devolvem template ou JSON.
+- **Templates não calculam valores**: totais, taxa e troco vêm prontos do service.
+- `legado_tkinter/` não é importado por nenhum arquivo.
 - Caminhos de arquivo sempre com `pathlib.Path(__file__).resolve().parent`.
-- Valores monetários exibidos no formato `R$ 1.234,56`. Criar uma função `formatar_moeda()` em um único lugar.
-- Datas gravadas no banco em ISO (`YYYY-MM-DD HH:MM:SS`).
+- Valores monetários exibidos no formato `R$ 1.234,56`. Uma única função `formatar_moeda()` (registrada também como filtro Jinja2 `moeda`). Valores guardados no banco em centavos (inteiro), para evitar erro de arredondamento.
+- Datas gravadas no banco em ISO (`YYYY-MM-DD HH:MM:SS`), horário local do servidor.
 - O estado das mesas vem do banco: mesa ocupada = existe comanda aberta para ela; "conta pedida" é um status da comanda.
+- Concorrência: antes de alterar uma comanda, o service confere se ela ainda está aberta (outro tablet pode ter acabado de pagar ou transferir) e lança exceção se não estiver. Ações de lançar/pagar são idempotentes contra toque duplo.
+
+### Segurança
+
+- Uso **apenas na rede local do bar**. Nunca expor à internet (sem redirecionamento de porta no roteador, sem túneis). A regra de firewall do Windows libera a porta só para a rede privada.
+- Login por PIN de 4 dígitos com sessão Flask (cookie assinado com `SECRET_KEY` gerada na instalação e guardada fora do git, ex.: `data/secret_key`). A sessão expira após um tempo sem uso (`TEMPO_SESSAO_MINUTOS` em `config.py`, padrão 15) e volta para a tela de login.
+- Ações de gerente pedem o PIN do gerente **na hora**, mesmo que o gerente já esteja logado no tablet; a autorização vale só para aquela ação e registra qual gerente autorizou.
+- Limite de tentativas de PIN erradas (ex.: bloqueio de 1 minuto após 5 erros seguidos no mesmo tablet).
+- PIN guardado com hash + salt (`hashlib.pbkdf2_hmac`), nunca em texto puro.
+- Formulários com proteção CSRF (token na sessão). Toda entrada validada no servidor, nunca só no JavaScript.
 
 ## Regras de trabalho
 
-- Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar o sistema/testes, resumir o que mudou e aguardar confirmação antes da próxima.
+- Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar os testes e o servidor, resumir o que mudou e aguardar confirmação antes da próxima.
 - Fazer commit no git ao fim de cada etapa, com mensagem em português.
 - Perguntar antes de apagar arquivos ou mudar o comportamento de alguma funcionalidade existente.
-- Nunca apagar nem recriar o arquivo `data/tucandeira.db` com dados reais; alterações de estrutura devem preservar os dados.
-- Manter o visual atual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Impact nos títulos).
+- Nunca apagar nem recriar o arquivo `data/tucandeira.db` com dados reais; alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).
+- Manter a identidade visual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Anton local nos títulos, logo).
+- Testar as telas em largura de tablet (aprox. 800×1280 em retrato e 1280×800 em paisagem) e, sempre que possível, em um tablet real.
 
 ## Decisões tomadas
 
@@ -85,6 +146,7 @@ tucandeira-bar/
 - **Pagamento dividido:** uma conta pode ser paga com formas diferentes (ex.: parte PIX, parte dinheiro).
 - **Número de mesas:** configurável no `config.py` (`NUM_MESAS`), padrão 8.
 - **Remover x cancelar item:** o operador pode remover um item sem PIN até 2 minutos depois de lançá-lo (prazo configurável no `config.py`). Depois disso, só por cancelamento, que exige motivo e PIN de gerente e fica registrado.
+- **Plataforma:** aplicação web na rede local (Flask + waitress), acessada por tablets e pelo computador do caixa. A versão Tkinter foi abandonada (tag `v1.0-tkinter`).
 
 ## Requisitos do sistema
 
@@ -97,11 +159,13 @@ tucandeira-bar/
 - **Pagamento:** taxa de 10% (regra acima); couvert artístico opcional por pessoa, com valor configurável e ativado no dia de show; desconto em R$ ou % com motivo; dividir entre formas de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
 - **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; entrada de mercadoria registrada.
 - **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
-- **Segurança dos dados:** backup automático do banco ao abrir o sistema, mantendo os 7 últimos.
+- **Segurança dos dados:** backup automático do banco ao iniciar o servidor (e uma vez por dia enquanto ele estiver rodando), mantendo os 7 últimos.
+- **Acesso simultâneo:** vários tablets usando o sistema ao mesmo tempo, sem perder nem duplicar lançamentos (transações no banco), com a tela de mesas atualizada sozinha em todos eles.
+- **Tela de caixa:** uma tela de caixa (abertura, sangria/suprimento, pagamentos, fechamento) que também funcione bem no navegador do próprio computador servidor, com mouse e teclado, além do toque no tablet.
 
 ### Versão 2.1 (futuro — NÃO implementar agora)
 
 - Impressão de comanda e cupom não fiscal em impressora térmica.
 - Emissão de NFC-e via serviço terceirizado.
-- Vários computadores em rede.
+- Mais de um servidor ou filiais com dados sincronizados.
 - Cardápio digital por QR Code.
