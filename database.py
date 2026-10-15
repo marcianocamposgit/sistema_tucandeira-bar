@@ -324,9 +324,18 @@ def _migracao_1(conexao, ambiente):
         )
 
 
+def _migracao_2(conexao, ambiente):
+    """Chave de cada toque em "lançar": se a rede falhar e o tablet reenviar o mesmo
+    toque, o item não é lançado duas vezes (índice único)."""
+    conexao.execute("ALTER TABLE itens_comanda ADD COLUMN chave_toque TEXT")
+    conexao.execute(
+        "CREATE UNIQUE INDEX idx_itens_comanda_chave ON itens_comanda(chave_toque) WHERE chave_toque IS NOT NULL"
+    )
+
+
 # Cada posição da lista leva o banco da versão N para a N+1.
 # Para mudar a estrutura no futuro, acrescente uma função no fim (nunca altere as antigas).
-MIGRACOES = [_migracao_1]
+MIGRACOES = [_migracao_1, _migracao_2]
 VERSAO_ESQUEMA = len(MIGRACOES)
 
 

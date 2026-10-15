@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% block titulo %}{{ comanda.identificacao }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="comanda-tela" id="comanda"
+         data-endereco-estado="{{ url_for('mesas.estado_comanda', comanda_id=comanda.id) }}"
+         data-endereco-lancar="{{ url_for('mesas.lancar', comanda_id=comanda.id) }}"
+         data-endereco-itens="{{ url_for('mesas.comanda', comanda_id=comanda.id) }}/itens/"
+         data-csrf="{{ csrf_token() }}" data-intervalo="{{ intervalo }}"
+         data-status="{{ comanda.status }}" data-identificacao="{{ comanda.identificacao }}">
+
+    <div class="comanda-topo">
+        <a href="{{ voltar }}" class="botao botao-secundario botao-pequeno">‹ Voltar</a>
+        <h1 class="titulo comanda-titulo">{{ comanda.identificacao }}</h1>
+        {% if comanda.status == "conta_pedida" %}<span class="selo-status selo-conta_pedida">Conta pedida</span>{% endif %}
+        <span class="comanda-pessoas" data-campo="pessoas_texto">{{ estado.pessoas_texto }}</span>
+    </div>
+    {% include "componentes/aviso_caixa.html" %}
+
+    <div class="comanda-acoes">
+        <button type="button" class="botao botao-pequeno" data-abrir="quadro-pessoas">Nº de pessoas</button>
+        <form method="post" action="{{ url_for('mesas.conta_pedida', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            {% if comanda.status == "conta_pedida" %}
+            <input type="hidden" name="pedida" value="0">
+            <button type="submit" class="botao botao-pequeno">Desfazer conta pedida</button>
+            {% else %}
+            <input type="hidden" name="pedida" value="1">
+            <button type="submit" class="botao botao-pequeno">Conta pedida</button>
+            {% endif %}
+        </form>
+        {% if comanda.tipo == "mesa" %}
+        <button type="button" class="botao botao-pequeno" data-abrir="quadro-transferir">Transferir</button>
+        <button type="button" class="botao botao-pequeno" data-abrir="quadro-juntar">Juntar mesas</button>
+        {% endif %}
+        <button type="button" class="botao botao-pequeno botao-perigo" data-abrir="quadro-cancelar-comanda">Cancelar comanda</button>
+    </div>
+
+    <div class="abas-comanda" role="tablist">
+        <button type="button" class="aba" data-aba="cardapio">Cardápio</button>
+        <button type="button" class="aba" data-aba="comanda">Comanda (<span data-campo="itens_texto">{{ estado.itens_texto }}</span>)</button>
+    </div>
+
+    <div class="comanda-corpo mostrar-{{ 'comanda' if aba == 'comanda' else 'cardapio' }}" data-corpo>
+        <div class="painel-cardapio">
+            <div class="abas-categorias">
+                {% for categoria, lista in cardapio %}
+                <button type="button" class="aba-categoria{% if loop.first %} aba-ativa{% endif %}"
+                        data-categoria="{{ categoria.id }}">{{ categoria.nome }}</button>
+                {% endfor %}
+            </div>
+            {% for categoria, lista in cardapio %}
+            <div class="produtos" data-produtos-categoria="{{ categoria.id }}"{% if not loop.first %} hidden{% endif %}>
+                {% for p in lista %}
+                <button type="button" class="produto{% if p.estoque <= 0 %} produto-sem-estoque{% endif %}"
+                        data-produto="{{ p.id }}">
+                    <span class="produto-nome">{{ p.nome }}</span>
+                    <span class="produto-preco">{{ p.preco_centavos | moeda }}</span>
+                    {% if p.estoque <= 0 %}<span class="produto-aviso">sem estoque</span>{% endif %}
+                </button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="subtitulo">Nenhum produto ativo no cardápio.</p>
+            {% endfor %}
+        </div>
+
+        <div class="painel-comanda">
+            <h2 class="secao-titulo">Comanda</h2>
+            <div data-itens>{{ estado.itens_html | safe }}</div>
+            <p class="subtitulo nota">"−" tira sem PIN até {{ prazo_remocao }} minuto(s) depois de lançar; depois disso,
+                pede motivo e o PIN do gerente.</p>
+        </div>
+    </div>
+
+    <div class="barra-total">
+        <div class="barra-total-valores">
+            <span class="barra-total-rotulo">Total</span>
+            <strong class="barra-total-valor" data-campo="total">{{ estado.total }}</strong>
+            <span class="barra-total-pago" data-pago-linha{% if not estado.pago %} hidden{% endif %}>
+                Já pago <span data-campo="pago">{{ estado.pago }}</span> · falta <span data-campo="saldo">{{ estado.saldo }}</span>
+            </span>
+        </div>
+        <a href="{{ url_for('mesas.pagamento', comanda_id=comanda.id) }}" class="botao botao-destaque botao-fechar-conta">Fechar Conta</a>
+    </div>
+    <div class="toast" data-toast role="status" hidden></div>
+</section>
+{% endblock %}
+
+{% block quadros %}
+{# ---------- Observação de uma linha da comanda ---------- #}
+<div class="sobreposicao" id="quadro-observacao" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Observação</h2>
+        <p class="quadro-texto" data-nome-item></p>
+        <form method="post" action="{{ url_for('mesas.observacao', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            <input type="hidden" name="item_id" value="">
+            {{ valor.texto_com_atalhos("observacao", "Observação (deixe em branco para tirar)", "", atalhos_observacao, maximo=100) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Salvar observação</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{# ---------- Cancelamento de item (depois do prazo): motivo + gerente ---------- #}
+<div class="sobreposicao" id="quadro-cancelar-item" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Cancelar item</h2>
+        <p class="quadro-texto">Passou o prazo de {{ prazo_remocao }} minuto(s): para tirar <strong data-nome-item></strong>,
+            informe o motivo e peça o PIN do gerente.</p>
+        <form method="post" action="{{ url_for('mesas.cancelar_item', comanda_id=comanda.id) }}"
+              data-exige-gerente="Cancelar item">
+            {{ pin.csrf() }}
+            <input type="hidden" name="item_id" value="">
+            {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_cancelamento) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Cancelar 1 unidade</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{# ---------- Número de pessoas ---------- #}
+<div class="sobreposicao" id="quadro-pessoas" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Nº de pessoas</h2>
+        <form method="post" action="{{ url_for('mesas.pessoas', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            <div class="grade-numeros">
+                {% for n in pessoas_rapidas %}
+                <button type="submit" name="pessoas" value="{{ n }}"
+                        class="botao botao-numero{% if n == comanda.pessoas %} botao-destaque{% endif %}">{{ n }}</button>
+                {% endfor %}
+            </div>
+        </form>
+        <form method="post" action="{{ url_for('mesas.pessoas', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            <label class="campo">
+                <span class="campo-rotulo">Outro número</span>
+                <input type="text" name="pessoas" value="{{ comanda.pessoas }}" inputmode="numeric" pattern="[0-9]*"
+                       maxlength="2" autocomplete="off">
+            </label>
+            <button type="submit" class="botao botao-destaque botao-largo">Salvar</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{% if comanda.tipo == "mesa" %}
+{# ---------- Transferir uma mesa para outra livre ---------- #}
+<div class="sobreposicao" id="quadro-transferir" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Transferir mesa</h2>
+        <form method="post" action="{{ url_for('mesas.transferir', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            {% if comanda.mesas | length > 1 %}
+            <p class="quadro-texto">Qual mesa vai sair? (as outras continuam juntas nesta comanda)</p>
+            <div class="grade-numeros">
+                {% for m in comanda.mesas %}
+                <label class="opcao"><input type="radio" name="origem" value="{{ m }}"{% if loop.first %} checked{% endif %}> Mesa {{ m }}</label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <input type="hidden" name="origem" value="{{ comanda.mesas[0] }}">
+            {% endif %}
+            <p class="quadro-texto">Para qual mesa livre?</p>
+            {% if mesas_livres %}
+            <div class="grade-numeros">
+                {% for n in mesas_livres %}
+                <button type="submit" name="destino" value="{{ n }}" class="botao botao-numero">{{ n }}</button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="quadro-texto">Nenhuma mesa livre agora.</p>
+            {% endif %}
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{# ---------- Juntar outra mesa a esta comanda ---------- #}
+<div class="sobreposicao" id="quadro-juntar" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Juntar mesas</h2>
+        <p class="quadro-texto">Qual mesa vai se juntar a {{ comanda.identificacao }}?
+            Se ela estiver ocupada, a conta dela passa para esta comanda.</p>
+        <form method="post" action="{{ url_for('mesas.juntar', comanda_id=comanda.id) }}">
+            {{ pin.csrf() }}
+            <div class="lista-botoes">
+                {% for e in outras_mesas %}
+                {% if e.status == "livre" %}
+                <button type="submit" name="mesa" value="{{ e.numero }}" class="botao botao-largo">Mesa {{ e.numero }} (livre)</button>
+                {% else %}
+                <button type="submit" name="mesa" value="{{ e.numero }}" class="botao botao-largo"
+                        data-confirmar="Juntar a conta da mesa {{ e.numero }} ({{ e.total_centavos | moeda }}) a {{ comanda.identificacao }}? Não dá para desfazer.">
+                    Mesa {{ e.numero }} (ocupada — {{ e.total_centavos | moeda }})</button>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# ---------- Cancelar a comanda inteira ---------- #}
+<div class="sobreposicao" id="quadro-cancelar-comanda" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Cancelar comanda</h2>
+        <p class="quadro-texto" data-cancelar-sem-itens{% if estado.tem_itens %} hidden{% endif %}>
+            A comanda não tem itens: o cancelamento libera a mesa na hora.</p>
+        <p class="quadro-texto" data-cancelar-com-itens{% if not estado.tem_itens %} hidden{% endif %}>
+            A comanda tem itens: informe o motivo e peça o PIN do gerente. Todos os itens ficam registrados como cancelados.</p>
+        <form method="post" action="{{ url_for('mesas.cancelar_comanda', comanda_id=comanda.id) }}"
+              {% if estado.tem_itens %}data-exige-gerente="Cancelar {{ comanda.identificacao }}"{% endif %}
+              data-texto-gerente="Cancelar {{ comanda.identificacao }}">
+            {{ pin.csrf() }}
+            {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_cancelar_comanda) }}
+            <button type="submit" class="botao botao-perigo botao-largo">Cancelar a comanda</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{% include "componentes/autorizacao_gerente.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/valor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rede.js') }}"></script>
+<script src="{{ url_for('static', filename='js/comanda.js') }}"></script>
+{% endblock %}

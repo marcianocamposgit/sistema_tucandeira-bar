@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}Mesas — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina pagina-larga" id="tela-mesas"
+         data-endereco-estado="{{ url_for('mesas.estado_mesas') }}" data-intervalo="{{ intervalo }}">
+    <div class="pagina-topo">
+        <h1 class="titulo">Mesas</h1>
+        <a href="{{ url_for('mesas.balcao') }}" class="botao botao-destaque" data-balcao>
+            Balcão / Para Viagem
+            <span class="contador" data-balcao-contador{% if not estado.balcao_abertas %} hidden{% endif %}>{{ estado.balcao_abertas }}</span>
+        </a>
+    </div>
+    {% include "componentes/aviso_caixa.html" %}
+
+    <div class="grade-mesas">
+        {% for m in estado.mesas %}
+        <a href="{{ m.endereco }}" class="mesa mesa-{{ m.status }}" data-mesa="{{ m.numero }}">
+            <span class="mesa-numero">{{ m.numero }}</span>
+            <span class="mesa-status" data-campo="status_nome">{{ m.status_nome }}</span>
+            <span class="mesa-detalhe" data-campo="total">{{ m.total }}</span>
+            <span class="mesa-detalhe" data-campo="pessoas">{{ m.pessoas_texto }}</span>
+            <span class="mesa-detalhe" data-campo="juntas">{% if m.juntas %}Mesas {{ m.juntas }}{% endif %}</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    <p class="subtitulo nota legenda-mesas">
+        <span class="legenda legenda-livre"></span> Livre
+        <span class="legenda legenda-ocupada"></span> Ocupada
+        <span class="legenda legenda-conta_pedida"></span> Conta pedida
+        · <span data-situacao-atualizacao>Atualiza sozinha a cada {{ intervalo }} segundos.</span>
+    </p>
+
+    <div class="rodape-acoes">
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rede.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mesas.js') }}"></script>
+{% endblock %}

@@ -9,6 +9,7 @@ from models.comandas import (
     ComandaPendente,
     Conta,
     EstadoMesa,
+    GrupoItens,
     ItemComanda,
     ResultadoLancamento,
     ResumoComanda,
@@ -19,7 +20,7 @@ from models.usuarios import AutorizacaoGerente, Usuario
 
 __all__ = [
     "AutorizacaoGerente", "Caixa", "CaixaMovimento", "Categoria", "Comanda", "ComandaPendente",
-    "ConferenciaForma", "Conta", "Desconto", "EstadoMesa", "ItemComanda", "ItemVenda", "MovimentoEstoque",
+    "ConferenciaForma", "Conta", "Desconto", "EstadoMesa", "GrupoItens", "ItemComanda", "ItemVenda", "MovimentoEstoque",
     "Pagamento", "Produto", "ResultadoFechamento", "ResultadoLancamento", "ResultadoPagamento",
     "ResumoComanda", "Usuario", "Venda", "de_linha",
 ]

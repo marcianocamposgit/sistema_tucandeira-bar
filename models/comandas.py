@@ -88,10 +88,33 @@ class Conta:
 
 
 @dataclass
+class GrupoItens:
+    """Lançamentos iguais (produto, preço e observação) mostrados numa linha só.
+
+    `ultimo_item_id` é o lançamento mais recente: o "−" tira dele primeiro.
+    """
+    produto_id: int
+    nome_produto: str
+    preco_unitario_centavos: int
+    observacao: Optional[str]
+    quantidade: int
+    ultimo_item_id: int
+
+    @property
+    def subtotal_centavos(self):
+        return self.preco_unitario_centavos * self.quantidade
+
+
+@dataclass
 class ResumoComanda:
     comanda: Comanda
     conta: Conta
     itens: List[ItemComanda] = field(default_factory=list)
+
+    @property
+    def quantidade_itens(self):
+        """Unidades lançadas (para "Comanda (n itens)")."""
+        return sum(item.quantidade for item in self.itens)
 
 
 @dataclass
@@ -118,3 +141,4 @@ class ComandaPendente:
 class ResultadoLancamento:
     item: ItemComanda
     aviso_estoque: Optional[str] = None
+    repetido: bool = False  # o mesmo toque chegou de novo e não foi lançado outra vez

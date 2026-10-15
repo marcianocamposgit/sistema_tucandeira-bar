@@ -56,6 +56,35 @@ def formatar_moeda(centavos):
     return f"{sinal}R$ {reais_texto},{resto:02d}"
 
 
+def formatar_valor_campo(centavos):
+    """Centavos no formato do campo de valor, sem o "R$" ('1.234,56').
+
+    Usado para devolver ao campo, já formatado, um valor digitado como "500".
+    """
+    return formatar_moeda(centavos).replace("R$ ", "")
+
+
+def valor_para_campo(texto):
+    """Texto digitado num campo de valor, formatado se for um valor válido ("500" → "500,00").
+
+    Texto inválido volta como foi digitado, para o usuário corrigir.
+    """
+    try:
+        return formatar_valor_campo(ler_moeda(texto))
+    except DadosInvalidosError:
+        return texto or ""
+
+
+def texto_pessoas(quantidade):
+    """'1 pessoa', '4 pessoas'."""
+    return f"{quantidade} pessoa" if quantidade == 1 else f"{quantidade} pessoas"
+
+
+def texto_itens(quantidade):
+    """'1 item', '3 itens'."""
+    return f"{quantidade} item" if quantidade == 1 else f"{quantidade} itens"
+
+
 def formatar_data_hora(texto):
     """Data/hora do banco ('2026-10-14 21:35:10') no formato '14/10/2026 21:35'."""
     if not texto:

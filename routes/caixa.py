@@ -22,7 +22,7 @@ from services.erros import (
     ErroDeNegocio,
     NaoEncontradoError,
 )
-from services.formatacao import formatar_moeda, ler_moeda
+from services.formatacao import formatar_moeda, ler_moeda, valor_para_campo
 
 bp = Blueprint("caixa", __name__, url_prefix="/caixa")
 
@@ -112,7 +112,8 @@ def movimento(tipo):
     dados = {"valor": "", "motivo": ""}
     acao = request.form.get("acao", "")
     if request.method == "POST" and acao != "corrigir":
-        dados = {"valor": request.form.get("valor", ""), "motivo": request.form.get("motivo", "")}
+        # O valor volta formatado ("500" → "500,00") se a tela for mostrada de novo.
+        dados = {"valor": valor_para_campo(request.form.get("valor", "")), "motivo": request.form.get("motivo", "")}
         valor = None
         try:
             valor = ler_moeda(dados["valor"], "o valor")
@@ -136,7 +137,7 @@ def movimento(tipo):
             flash(MENSAGEM_REGISTRADO[tipo].format(formatar_moeda(valor)), "sucesso")
             return redirect(url_for("caixa.painel"))
     elif acao == "corrigir":
-        dados = {"valor": request.form.get("valor", ""), "motivo": request.form.get("motivo", "")}
+        dados = {"valor": valor_para_campo(request.form.get("valor", "")), "motivo": request.form.get("motivo", "")}
     return render_template(
         "caixa/movimento.html",
         tipo=tipo,

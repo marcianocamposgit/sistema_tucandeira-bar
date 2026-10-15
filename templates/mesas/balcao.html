@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Balcão — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Balcão / Para Viagem</h1>
+    {% include "componentes/aviso_caixa.html" %}
+
+    <form method="post" class="cartao formulario-balcao">
+        {{ pin.csrf() }}
+        <label class="campo">
+            <span class="campo-rotulo">Nova comanda: nome do cliente</span>
+            <input type="text" name="nome_cliente" value="{{ nome }}" maxlength="40" autocomplete="off"
+                   autocapitalize="words" required>
+        </label>
+        <button type="submit" class="botao botao-destaque botao-largo">Abrir comanda</button>
+        <p class="subtitulo nota">Dois clientes com o mesmo nome? Use, por exemplo, "João 2".</p>
+    </form>
+
+    <h2 class="secao-titulo">Comandas abertas</h2>
+    {% if abertas %}
+    <ul class="lista">
+        {% for r in abertas %}
+        <li>
+            <a class="lista-item lista-item-link" href="{{ url_for('mesas.comanda', comanda_id=r.comanda.id, aba='comanda') }}">
+                <span class="lista-item-info">
+                    <strong>{{ r.comanda.nome_cliente }}</strong>
+                    <span>{{ "Conta pedida" if r.comanda.status == "conta_pedida" else "Aberta" }}
+                        desde {{ r.comanda.aberta_em | data_hora }} · total {{ r.conta.total_centavos | moeda }}</span>
+                </span>
+                <span class="lista-item-seta" aria-hidden="true">›</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">Nenhuma comanda de balcão aberta.</p>
+    {% endif %}
+
+    <div class="rodape-acoes">
+        <a href="{{ url_for('mesas.mesas') }}" class="botao botao-secundario">Voltar às mesas</a>
+    </div>
+</section>
+{% endblock %}

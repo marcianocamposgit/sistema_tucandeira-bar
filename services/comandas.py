@@ -19,6 +19,7 @@ from models import (
     ComandaPendente,
     Conta,
     EstadoMesa,
+    GrupoItens,
     ItemComanda,
     ResultadoLancamento,
     ResumoComanda,
@@ -255,11 +256,24 @@ def abrir_balcao(conexao, nome_cliente, usuario_id, pessoas=1, agora=None):
 # ============================================================
 # ITENS
 # ============================================================
-def lancar_item(conexao, comanda_id, produto_id, usuario_id, quantidade=1, observacao=None, agora=None):
-    """Lança um produto na comanda. Sem estoque: lança e devolve um aviso."""
+def lancar_item(conexao, comanda_id, produto_id, usuario_id, quantidade=1, observacao=None, agora=None,
+                chave=None):
+    """Lança um produto na comanda. Sem estoque: lança e devolve um aviso.
+
+    `chave` identifica o toque (gerada no aparelho): se o mesmo toque chegar de
+    novo (rede instável, reenvio), devolve o item já lançado sem lançar outro.
+    """
     exigir_inteiro(quantidade, "a quantidade", minimo=1, maximo=MAXIMO_QUANTIDADE)
     observacao = texto_opcional(observacao, maximo=100)
+    chave = texto_opcional(chave, maximo=64)
     with transacao(conexao):
+        if chave:
+            ja_lancado = conexao.execute(
+                "SELECT * FROM itens_comanda WHERE chave_toque = ?", (chave,)).fetchone()
+            if ja_lancado is not None:
+                if ja_lancado["comanda_id"] != comanda_id:
+                    raise DadosInvalidosError("Toque repetido em outra comanda. Atualize a tela.")
+                return ResultadoLancamento(de_linha(ItemComanda, ja_lancado), None, repetido=True)
         exigir_caixa_aberto(conexao)
         _comanda_editavel(conexao, comanda_id)
         produto = conexao.execute("SELECT * FROM produtos WHERE id = ?", (produto_id,)).fetchone()
@@ -269,10 +283,10 @@ def lancar_item(conexao, comanda_id, produto_id, usuario_id, quantidade=1, obser
             raise DadosInvalidosError(f"{produto['nome']} está desativado no cardápio.")
         item_id = conexao.execute(
             """INSERT INTO itens_comanda (comanda_id, produto_id, nome_produto, preco_unitario_centavos,
-                                          quantidade, observacao, lancado_por, lancado_em)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                          quantidade, observacao, lancado_por, lancado_em, chave_toque)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (comanda_id, produto_id, produto["nome"], produto["preco_centavos"], quantidade,
-             observacao, usuario_id, texto_data(agora)),
+             observacao, usuario_id, texto_data(agora), chave),
         ).lastrowid
         # O estoque só baixa no pagamento; aqui o aviso considera o que já está nas comandas abertas.
         nas_comandas = conexao.execute(
@@ -288,7 +302,54 @@ def lancar_item(conexao, comanda_id, produto_id, usuario_id, quantidade=1, obser
     return ResultadoLancamento(_obter_item(conexao, item_id), aviso)
 
 
+def repetir_item(conexao, item_id, usuario_id, agora=None, chave=None):
+    """Botão "+" de uma linha da comanda: lança mais 1 do mesmo produto, com a mesma observação."""
+    item = _obter_item(conexao, item_id)
+    return lancar_item(conexao, item.comanda_id, item.produto_id, usuario_id, 1, item.observacao,
+                       agora=agora, chave=chave)
+
+
+def _chave_grupo(item):
+    return (item.produto_id, item.preco_unitario_centavos, item.observacao or "")
+
+
+def agrupar_itens(itens):
+    """Junta os lançamentos iguais numa linha (ordem do primeiro lançamento).
+
+    Recebe os itens de listar_itens() (já em ordem de lançamento, só com quantidade > 0).
+    """
+    grupos = {}
+    for item in itens:
+        chave = _chave_grupo(item)
+        grupo = grupos.get(chave)
+        if grupo is None:
+            grupos[chave] = GrupoItens(item.produto_id, item.nome_produto, item.preco_unitario_centavos,
+                                       item.observacao, item.quantidade, item.id)
+        else:
+            grupo.quantidade += item.quantidade
+            grupo.ultimo_item_id = item.id
+    return list(grupos.values())
+
+
+def alterar_observacao_grupo(conexao, item_id, observacao, usuario_id, agora=None):
+    """Troca a observação de todos os lançamentos da mesma linha da comanda."""
+    observacao = texto_opcional(observacao, maximo=100)
+    with transacao(conexao):
+        exigir_caixa_aberto(conexao)
+        item = _obter_item(conexao, item_id)
+        _comanda_editavel(conexao, item.comanda_id)
+        mesma_linha = [i.id for i in listar_itens(conexao, item.comanda_id)
+                       if _chave_grupo(i) == _chave_grupo(item)]
+        for outro_id in mesma_linha:
+            conexao.execute("UPDATE itens_comanda SET observacao = ? WHERE id = ?", (observacao, outro_id))
+        registrar_auditoria(conexao, "observacao_alterada", usuario_id,
+                            {"itens": mesma_linha, "antes": item.observacao, "depois": observacao}, agora=agora)
+    return _obter_item(conexao, item_id)
+
+
 def _diminuir_item(conexao, item, quantidade, tipo, usuario_id, motivo, autorizado_por, agora):
+    if item.quantidade == 0:
+        raise DadosInvalidosError("Este item já foi retirado da comanda (talvez em outro aparelho).")
     if quantidade > item.quantidade:
         raise DadosInvalidosError(f"O item tem só {item.quantidade} unidade(s).")
     conexao.execute("UPDATE itens_comanda SET quantidade = quantidade - ? WHERE id = ?",

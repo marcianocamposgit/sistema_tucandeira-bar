@@ -4,7 +4,7 @@ import secrets
 import time
 from functools import wraps
 
-from flask import abort, flash, g, redirect, request, session, url_for
+from flask import abort, flash, g, jsonify, redirect, request, session, url_for
 
 import config
 from models import AutorizacaoGerente
@@ -57,12 +57,20 @@ def _carregar_usuario():
         session["ultimo_acesso"] = agora
 
 
+def requisicao_do_javascript():
+    """Pedido feito pelo JavaScript da tela (XMLHttpRequest), que espera JSON."""
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
 def login_obrigatorio(rota):
     @wraps(rota)
     def protegida(*args, **kwargs):
         if g.get("usuario") is None:
             if g.get("sessao_expirada"):
                 flash("Sua sessão expirou por inatividade. Entre de novo.", "aviso")
+            if requisicao_do_javascript():
+                # O JavaScript recarrega a página, que mostra o login.
+                return jsonify(erro="Sua sessão expirou. Entre de novo.", sessao_expirada=True), 401
             return redirect(url_for("auth.login"))
         return rota(*args, **kwargs)
     return protegida

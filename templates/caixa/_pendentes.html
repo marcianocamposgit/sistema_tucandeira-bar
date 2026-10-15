@@ -1,16 +1,19 @@
-{# Comandas que impedem o fechamento do caixa. #}
+{# Comandas que impedem o fechamento do caixa. Cada uma leva à tela da comanda. #}
 <div class="mensagem mensagem-erro" role="alert">
     <strong>Não é possível fechar o caixa.</strong>
     Estas comandas ainda estão abertas ou com conta pedida. Receba ou cancele cada uma antes de fechar:
 </div>
 <ul class="lista">
     {% for c in pendentes %}
-    <li class="lista-item">
-        <div class="lista-item-info">
-            <strong>{{ c.identificacao }}</strong>
-            <span>{{ "Conta pedida" if c.status == "conta_pedida" else "Aberta" }} ·
-                total {{ c.total_centavos | moeda }} · falta pagar {{ c.saldo_centavos | moeda }}</span>
-        </div>
+    <li>
+        <a class="lista-item lista-item-link" href="{{ url_for('mesas.comanda', comanda_id=c.comanda_id, aba='comanda') }}">
+            <span class="lista-item-info">
+                <strong>{{ c.identificacao }}</strong>
+                <span>{{ "Conta pedida" if c.status == "conta_pedida" else "Aberta" }} ·
+                    total {{ c.total_centavos | moeda }} · falta pagar {{ c.saldo_centavos | moeda }}</span>
+            </span>
+            <span class="lista-item-seta" aria-hidden="true">›</span>
+        </a>
     </li>
     {% endfor %}
 </ul>

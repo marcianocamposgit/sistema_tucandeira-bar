@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Fechar conta — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Fechar conta — {{ comanda.identificacao }}</h1>
+    <table class="tabela">
+        <tbody>
+            <tr><th scope="row">Total</th><td class="numero"><strong>{{ conta.total_centavos | moeda }}</strong></td></tr>
+            <tr><th scope="row">Já pago</th><td class="numero">{{ conta.pago_centavos | moeda }}</td></tr>
+            <tr><th scope="row">Falta pagar</th><td class="numero">{{ conta.saldo_centavos | moeda }}</td></tr>
+            <tr><th scope="row">Por pessoa ({{ conta.pessoas }})</th><td class="numero">{{ conta.por_pessoa_centavos | moeda }}</td></tr>
+        </tbody>
+    </table>
+    <div class="mensagem" role="status">
+        A tela de pagamento (dinheiro, débito, crédito e PIX, com pagamento parcial e troco) chega na próxima etapa.
+    </div>
+    <div class="rodape-acoes">
+        <a href="{{ url_for('mesas.comanda', comanda_id=comanda.id, aba='comanda') }}" class="botao">Voltar à comanda</a>
+        <a href="{{ url_for('mesas.mesas') }}" class="botao botao-secundario">Ir para as mesas</a>
+    </div>
+</section>
+{% endblock %}

@@ -323,3 +323,47 @@ def test_dois_aparelhos_abrindo_a_mesma_mesa(tmp_path, monkeypatch):
     for t in threads:
         t.join()
     assert sorted(resultados) == ["abriu", "ocupada", "ocupada", "ocupada"]
+
+
+def test_lancar_com_chave_nao_duplica_toque_repetido(conexao, operador, caixa_aberto):
+    """O tablet reenvia o mesmo toque (rede instável): o item entra uma vez só."""
+    mesa = comandas.abrir_mesa(conexao, 1, operador.id)
+    primeiro = comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id, chave="toque-1")
+    de_novo = comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id, chave="toque-1")
+    assert not primeiro.repetido and de_novo.repetido and de_novo.item.id == primeiro.item.id
+    comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id, chave="toque-2")  # outro toque conta
+    assert comandas.calcular_conta(conexao, mesa.id).subtotal_centavos == 2 * 800
+    outra = comandas.abrir_mesa(conexao, 2, operador.id)
+    with pytest.raises(DadosInvalidosError):
+        comandas.lancar_item(conexao, outra.id, BRAHMA, operador.id, chave="toque-1")
+    assert comandas.calcular_conta(conexao, outra.id).subtotal_centavos == 0
+
+
+def test_repetir_item_e_agrupar(conexao, operador, caixa_aberto):
+    mesa = comandas.abrir_mesa(conexao, 1, operador.id)
+    brahma = comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id).item
+    comandas.lancar_item(conexao, mesa.id, CALABRESA, operador.id, observacao="bem passada")
+    comandas.repetir_item(conexao, brahma.id, operador.id)  # "+" na linha da Brahma
+    ultimo = comandas.repetir_item(conexao, brahma.id, operador.id, chave="mais-1").item
+    comandas.repetir_item(conexao, brahma.id, operador.id, chave="mais-1")  # toque repetido
+    grupos = comandas.agrupar_itens(comandas.listar_itens(conexao, mesa.id))
+    assert [(g.nome_produto, g.quantidade, g.subtotal_centavos) for g in grupos] == [
+        ("Brahma Lata", 3, 2400), ("Porção Calabresa", 1, 2800)]
+    assert grupos[0].ultimo_item_id == ultimo.id  # o "−" tira do lançamento mais recente
+    assert comandas.obter_resumo(conexao, mesa.id).quantidade_itens == 4
+    # Observação diferente vira outra linha; trocar a observação da linha muda todos os lançamentos dela.
+    comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id, observacao="sem gelo")
+    assert len(comandas.agrupar_itens(comandas.listar_itens(conexao, mesa.id))) == 3
+    comandas.alterar_observacao_grupo(conexao, brahma.id, "sem gelo", operador.id)
+    grupos = comandas.agrupar_itens(comandas.listar_itens(conexao, mesa.id))
+    assert [(g.nome_produto, g.observacao, g.quantidade) for g in grupos] == [
+        ("Brahma Lata", "sem gelo", 4), ("Porção Calabresa", "bem passada", 1)]
+    assert comandas.calcular_conta(conexao, mesa.id).subtotal_centavos == 4 * 800 + 2800
+
+
+def test_remover_item_ja_retirado_em_outro_aparelho(conexao, operador, caixa_aberto):
+    mesa = comandas.abrir_mesa(conexao, 1, operador.id)
+    item = comandas.lancar_item(conexao, mesa.id, BRAHMA, operador.id).item
+    comandas.remover_item(conexao, item.id, operador.id)
+    with pytest.raises(DadosInvalidosError, match="já foi retirado"):
+        comandas.remover_item(conexao, item.id, operador.id)

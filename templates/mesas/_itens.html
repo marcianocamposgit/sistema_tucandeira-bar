@@ -1,0 +1,23 @@
+{# Itens da comanda, agrupados (redesenhado pelo JavaScript a cada atualização). #}
+<ul class="itens">
+    {% for gr in grupos %}
+    <li class="item">
+        <div class="item-info">
+            <strong><span class="item-qtd">{{ gr.quantidade }}×</span> {{ gr.nome_produto }}</strong>
+            {% if gr.observacao %}<span class="item-obs">{{ gr.observacao }}</span>{% endif %}
+            <span class="item-subtotal">{{ gr.subtotal_centavos | moeda }}</span>
+        </div>
+        <div class="item-botoes">
+            <button type="button" class="botao botao-item" data-acao="menos" data-item="{{ gr.ultimo_item_id }}"
+                    data-nome="{{ gr.nome_produto }}" aria-label="Tirar 1 {{ gr.nome_produto }}">−</button>
+            <button type="button" class="botao botao-item" data-acao="mais" data-item="{{ gr.ultimo_item_id }}"
+                    aria-label="Mais 1 {{ gr.nome_produto }}">+</button>
+            <button type="button" class="botao botao-item botao-obs" data-acao="observacao"
+                    data-item="{{ gr.ultimo_item_id }}" data-nome="{{ gr.nome_produto }}"
+                    data-observacao="{{ gr.observacao or '' }}">Obs.</button>
+        </div>
+    </li>
+    {% else %}
+    <li class="itens-vazio">Nenhum item ainda. Toque nos produtos do cardápio para lançar.</li>
+    {% endfor %}
+</ul>

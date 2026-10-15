@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Abrir mesa {{ numero }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Abrir mesa {{ numero }}</h1>
+    {% include "componentes/aviso_caixa.html" %}
+    <p class="subtitulo">Quantas pessoas estão na mesa?</p>
+
+    <form method="post" class="cartao cartao-estreito formulario-pessoas">
+        {{ pin.csrf() }}
+        <div class="grade-numeros">
+            {% for n in pessoas_rapidas %}
+            <button type="submit" name="pessoas" value="{{ n }}" class="botao botao-numero">{{ n }}</button>
+            {% endfor %}
+        </div>
+    </form>
+    <form method="post" class="cartao cartao-estreito formulario-pessoas">
+        {{ pin.csrf() }}
+        <label class="campo">
+            <span class="campo-rotulo">Mais pessoas? Digite o número</span>
+            <input type="text" name="pessoas" value="{{ pessoas }}" inputmode="numeric" pattern="[0-9]*"
+                   maxlength="2" autocomplete="off">
+        </label>
+        <button type="submit" class="botao botao-destaque botao-largo">Abrir mesa</button>
+    </form>
+
+    <div class="rodape-acoes">
+        <a href="{{ url_for('mesas.mesas') }}" class="botao botao-secundario">Voltar às mesas</a>
+    </div>
+</section>
+{% endblock %}
