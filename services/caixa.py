@@ -42,6 +42,14 @@ def exigir_caixa_aberto(conexao):
     return caixa
 
 
+def ultimo_fechado(conexao):
+    """O caixa fechado mais recente, ou None."""
+    linha = conexao.execute(
+        "SELECT * FROM caixas WHERE status = 'fechado' ORDER BY fechado_em DESC, id DESC LIMIT 1"
+    ).fetchone()
+    return _caixa(linha) if linha else None
+
+
 def obter(conexao, caixa_id):
     linha = conexao.execute("SELECT * FROM caixas WHERE id = ?", (caixa_id,)).fetchone()
     if linha is None:
@@ -189,3 +197,11 @@ def obter_conferencia(conexao, caixa_id):
         "SELECT * FROM caixa_conferencias WHERE caixa_id = ? ORDER BY id", (caixa_id,)
     ).fetchall()
     return [ConferenciaForma(l["forma"], l["esperado_centavos"], l["contado_centavos"]) for l in linhas]
+
+
+def resumo_fechamento(conexao, caixa_id):
+    """Caixa fechado com a conferência gravada (para a tela de resumo)."""
+    caixa = obter(conexao, caixa_id)
+    if caixa.aberto:
+        raise DadosInvalidosError("Este caixa ainda está aberto.")
+    return ResultadoFechamento(caixa, obter_conferencia(conexao, caixa_id))

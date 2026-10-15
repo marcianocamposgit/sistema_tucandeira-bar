@@ -67,7 +67,10 @@ Primeiro acesso (cria o gerente), login tocando no nome + PIN no teclado da tela
 
 ---
 
-## Etapa 4 — Controle de caixa
+## Etapa 4 — Controle de caixa ✅ concluída
+
+Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco, suprimento e sangria com motivo e botões de atalho (sangria com autorização do gerente e limitada ao dinheiro em caixa), painel com o esperado por forma e os movimentos, fechamento em dois passos (digitar o contado → conferência esperado x contado x diferença destacando falta/sobra → confirmar com PIN do gerente), lista das comandas pendentes que impedem o fechamento e resumo do caixa fechado. Campo de dinheiro reutilizável (`componentes/valor.html` + `static/js/valor.js`): digitação normal no computador e teclado numérico na tela no tablet. Conversão do texto digitado para centavos em `services/formatacao.ler_moeda()` (com testes). Selo "Caixa aberto/fechado" no cabeçalho de todas as telas; qualquer rota que esbarrar em `CaixaFechadoError` mostra o aviso com o botão "Abrir o caixa" (também em JSON, para as telas da Etapa 5), e `componentes/aviso_caixa.html` fica pronto para as telas de venda. 154 testes pytest. O prompt original fica abaixo como registro.
+
 
 > Crie routes/caixa.py e as telas usando services/caixa.py: abrir caixa (fundo de troco com teclado numérico na tela), sangria e suprimento com motivo (sangria pede PIN do gerente), e fechamento com a conferência por forma de pagamento (esperado x contado x diferença, destacando diferenças), pedindo o PIN do gerente. Mostrar no cabeçalho, em todas as telas, se o caixa está aberto ou fechado. Esta tela precisa funcionar bem tanto no tablet (toque) quanto no navegador do computador servidor (mouse e teclado físico, campos aceitando digitação normal). Com o caixa fechado, as telas de venda mostram um aviso e o botão para abrir o caixa.
 

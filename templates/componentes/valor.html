@@ -1,0 +1,41 @@
+{# Campos de dinheiro. Uso: {% import "componentes/valor.html" as valor %}
+   O campo aceita digitação normal no computador; no tablet, os números
+   entram pelo teclado da tela (static/js/valor.js). #}
+
+{% macro campo(nome, rotulo, texto="", foco=False) -%}
+<label class="campo campo-valor">
+    <span class="campo-rotulo">{{ rotulo }}</span>
+    <span class="campo-valor-caixa">
+        <span class="campo-valor-rs">R$</span>
+        <input type="text" name="{{ nome }}" value="{{ texto }}" class="entrada-valor" inputmode="decimal"
+               autocomplete="off" placeholder="0,00" maxlength="16"{% if foco %} data-foco{% endif %}>
+    </span>
+</label>
+{%- endmacro %}
+
+{# Teclado numérico na tela: escreve no campo de valor selecionado. #}
+{% macro teclado() -%}
+<div class="teclado teclado-valor" data-teclado-valor>
+    {%- for tecla in ["1", "2", "3", "4", "5", "6", "7", "8", "9", ","] %}
+    <button type="button" class="tecla" data-tecla-valor="{{ tecla }}">{{ tecla }}</button>
+    {%- endfor %}
+    <button type="button" class="tecla" data-tecla-valor="0">0</button>
+    <button type="button" class="tecla tecla-acao" data-tecla-valor="apagar">Apagar</button>
+    <button type="button" class="tecla tecla-acao tecla-larga" data-tecla-valor="limpar">Limpar</button>
+</div>
+{%- endmacro %}
+
+{# Campo de texto curto com botões de atalho (ex.: motivo). #}
+{% macro texto_com_atalhos(nome, rotulo, texto, atalhos, maximo=200) -%}
+<label class="campo">
+    <span class="campo-rotulo">{{ rotulo }}</span>
+    <input type="text" name="{{ nome }}" value="{{ texto }}" maxlength="{{ maximo }}" autocomplete="off"
+           autocapitalize="sentences">
+</label>
+<div class="atalhos">
+    {%- for atalho in atalhos %}
+    <button type="button" class="botao botao-pequeno botao-secundario" data-atalho="{{ atalho }}"
+            data-alvo="{{ nome }}">{{ atalho }}</button>
+    {%- endfor %}
+</div>
+{%- endmacro %}

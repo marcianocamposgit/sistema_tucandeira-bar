@@ -1,0 +1,7 @@
+{# Aviso para as telas de venda: com o caixa fechado, mostra o botão para abrir. #}
+{% if not caixa_atual() %}
+<div class="mensagem mensagem-erro aviso-caixa" role="alert">
+    <strong>O caixa está fechado.</strong> Não é possível abrir comandas nem receber pagamentos.
+    <a href="{{ url_for('caixa.painel') }}" class="botao botao-destaque botao-pequeno">Abrir o caixa</a>
+</div>
+{% endif %}

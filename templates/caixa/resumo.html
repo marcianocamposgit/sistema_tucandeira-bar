@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Caixa fechado — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Fechamento do caixa</h1>
+    <p class="subtitulo">
+        Aberto em {{ resultado.caixa.aberto_em | data_hora }} por {{ aberto_por }}
+        (fundo de troco {{ resultado.caixa.valor_inicial_centavos | moeda }}).<br>
+        Fechado em {{ resultado.caixa.fechado_em | data_hora }}, autorizado por {{ fechado_por }}.
+    </p>
+    {% if resultado.caixa.observacao %}
+    <p>Observação: {{ resultado.caixa.observacao }}</p>
+    {% endif %}
+
+    {% set diferenca_total = resultado.diferenca_total_centavos %}
+    {% set conferencias = resultado.conferencias %}
+    {% include "caixa/_conferencia.html" %}
+
+    {% if movimentos %}
+    <h2 class="secao-titulo">Sangrias e suprimentos</h2>
+    <ul class="lista">
+        {% for m in movimentos %}
+        <li class="lista-item">
+            <div class="lista-item-info">
+                <strong>{{ "Sangria" if m.tipo == "sangria" else "Suprimento" }} — {{ m.valor_centavos | moeda }}</strong>
+                <span>{{ m.criado_em | data_hora }} · {{ m.usuario_nome }} · {{ m.motivo }}</span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="grade-acoes">
+        <a href="{{ url_for('caixa.painel') }}" class="botao">Ir para o caixa</a>
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+    </div>
+</section>
+{% endblock %}

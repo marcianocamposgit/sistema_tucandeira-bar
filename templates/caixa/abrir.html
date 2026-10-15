@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% block titulo %}Abrir caixa — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Abrir caixa</h1>
+    <p class="subtitulo">O caixa está fechado. Informe o dinheiro que fica na gaveta para troco.</p>
+    <form method="post" action="{{ url_for('caixa.abrir') }}" class="entrada-com-teclado">
+        {{ pin.csrf() }}
+        <div class="entrada-campos">
+            {{ valor.campo("fundo", "Fundo de troco", fundo, foco=True) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Abrir caixa</button>
+            <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-largo">Voltar</a>
+        </div>
+        <div class="entrada-teclado">{{ valor.teclado() }}</div>
+    </form>
+    {% if ultimo %}
+    <p class="subtitulo rodape-versao">
+        Último fechamento: {{ ultimo.fechado_em | data_hora }} —
+        <a href="{{ url_for('caixa.resumo', caixa_id=ultimo.id) }}" class="link">ver conferência</a>
+    </p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}Caixa fechado — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">Caixa fechado</h1>
+    <p>{{ mensagem }}</p>
+    <a href="{{ url_for('caixa.painel') }}" class="botao botao-destaque botao-largo">Abrir o caixa</a>
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-largo">Voltar ao início</a>
+</section>
+{% endblock %}

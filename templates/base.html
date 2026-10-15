@@ -18,6 +18,11 @@
         </a>
         {% if usuario %}
         <div class="cabecalho-usuario">
+            {% if caixa_atual() %}
+            <a href="{{ url_for('caixa.painel') }}" class="selo-caixa selo-caixa-aberto">Caixa aberto</a>
+            {% else %}
+            <a href="{{ url_for('caixa.painel') }}" class="selo-caixa selo-caixa-fechado">Caixa fechado</a>
+            {% endif %}
             <span class="cabecalho-quem">
                 {{ usuario.nome }}
                 <small>{{ usuario.perfil_nome }}</small>

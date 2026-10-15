@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titulo %}Caixa — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">Caixa aberto</h1>
+    </div>
+    <p class="subtitulo">
+        Aberto em {{ caixa.aberto_em | data_hora }} por {{ aberto_por }} —
+        fundo de troco {{ caixa.valor_inicial_centavos | moeda }}
+    </p>
+
+    <div class="grade-acoes">
+        <a href="{{ url_for('caixa.movimento', tipo='suprimento') }}" class="botao">+ Suprimento</a>
+        <a href="{{ url_for('caixa.movimento', tipo='sangria') }}" class="botao">− Sangria</a>
+        <a href="{{ url_for('caixa.fechar') }}" class="botao botao-destaque">Fechar caixa</a>
+    </div>
+
+    <h2 class="secao-titulo">Esperado no caixa agora</h2>
+    <table class="tabela">
+        <tbody>
+            {% for forma, nome in formas.items() %}
+            <tr>
+                <th scope="row">{{ nome }}</th>
+                <td class="numero">{{ esperado[forma] | moeda }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="subtitulo nota">Dinheiro = fundo de troco + pagamentos em dinheiro + suprimentos − sangrias.</p>
+
+    <h2 class="secao-titulo">Sangrias e suprimentos</h2>
+    {% if movimentos %}
+    <ul class="lista">
+        {% for m in movimentos %}
+        <li class="lista-item">
+            <div class="lista-item-info">
+                <strong>{{ "Sangria" if m.tipo == "sangria" else "Suprimento" }} — {{ m.valor_centavos | moeda }}</strong>
+                <span>{{ m.criado_em | data_hora }} · {{ m.usuario_nome }} · {{ m.motivo }}</span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">Nenhum movimento neste caixa.</p>
+    {% endif %}
+
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+</section>
+{% endblock %}

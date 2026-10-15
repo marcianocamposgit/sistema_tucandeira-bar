@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% block titulo %}Fechar caixa — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Fechar caixa</h1>
+    {% if pendentes %}
+    {% include "caixa/_pendentes.html" %}
+    <a href="{{ url_for('caixa.painel') }}" class="botao botao-secundario">Voltar ao caixa</a>
+    {% else %}
+    <p class="subtitulo">Passo 1 de 2: conte o que há no caixa e digite o valor de cada forma de pagamento
+        (dinheiro na gaveta e os totais da maquininha). Depois o sistema mostra a conferência.</p>
+    <form method="post" class="entrada-com-teclado">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="conferir">
+        <div class="entrada-campos">
+            {% for forma, nome in formas.items() %}
+            {{ valor.campo("contado_" ~ forma, nome ~ " contado", textos[forma], foco=loop.first) }}
+            {% endfor %}
+            <button type="submit" class="botao botao-destaque botao-largo">Conferir</button>
+            <a href="{{ url_for('caixa.painel') }}" class="botao botao-secundario botao-largo">Voltar</a>
+        </div>
+        <div class="entrada-teclado">{{ valor.teclado() }}</div>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

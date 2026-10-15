@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Conferência do caixa — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Conferência do caixa</h1>
+    {% if pendentes %}
+    {% include "caixa/_pendentes.html" %}
+    {% else %}
+    <p class="subtitulo">Passo 2 de 2: confira as diferenças. Para fechar, o gerente confirma com o PIN.</p>
+    {% endif %}
+
+    {% set diferenca_total = previa.diferenca_total_centavos %}
+    {% set conferencias = previa.conferencias %}
+    {% include "caixa/_conferencia.html" %}
+
+    {% if not pendentes %}
+    <form method="post" data-exige-gerente="Fechar o caixa">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="confirmar">
+        {% for forma in formas %}
+        <input type="hidden" name="contado_{{ forma }}" value="{{ textos[forma] }}">
+        {% endfor %}
+        <label class="campo">
+            <span class="campo-rotulo">Observação (opcional — ex.: explicação de uma diferença)</span>
+            <input type="text" name="observacao" value="{{ observacao }}" maxlength="200" autocomplete="off"
+                   autocapitalize="sentences">
+        </label>
+        <button type="submit" class="botao botao-destaque botao-largo">Confirmar fechamento</button>
+    </form>
+    {% endif %}
+    <form method="post">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="corrigir">
+        {% for forma in formas %}
+        <input type="hidden" name="contado_{{ forma }}" value="{{ textos[forma] }}">
+        {% endfor %}
+        <button type="submit" class="botao botao-secundario botao-largo">Corrigir valores</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

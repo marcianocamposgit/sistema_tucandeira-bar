@@ -1,0 +1,33 @@
+{# Tabela esperado x contado x diferença. Recebe `conferencias`, `formas` e `diferenca_total`. #}
+{% macro classe(diferenca) -%}
+{{ "diferenca-falta" if diferenca < 0 else ("diferenca-sobra" if diferenca > 0 else "diferenca-ok") }}
+{%- endmacro %}
+{% macro texto(diferenca) -%}
+{% if diferenca < 0 %}{{ diferenca | moeda }} faltou{% elif diferenca > 0 %}+{{ diferenca | moeda }} sobrou{% else %}confere{% endif %}
+{%- endmacro %}
+<table class="tabela tabela-conferencia">
+    <thead>
+        <tr>
+            <th scope="col">Forma</th>
+            <th scope="col" class="numero">Esperado</th>
+            <th scope="col" class="numero">Contado</th>
+            <th scope="col" class="numero">Diferença</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in conferencias %}
+        <tr class="{{ classe(c.diferenca_centavos) }}">
+            <th scope="row">{{ formas[c.forma] }}</th>
+            <td class="numero">{{ c.esperado_centavos | moeda }}</td>
+            <td class="numero">{{ c.contado_centavos | moeda }}</td>
+            <td class="numero diferenca">{{ texto(c.diferenca_centavos) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr class="{{ classe(diferenca_total) }}">
+            <th scope="row" colspan="3">Diferença total</th>
+            <td class="numero diferenca">{{ texto(diferenca_total) }}</td>
+        </tr>
+    </tfoot>
+</table>

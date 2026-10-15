@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% set nome_tipo = "Sangria" if tipo == "sangria" else "Suprimento" %}
+{% block titulo %}{{ nome_tipo }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">{{ nome_tipo }}</h1>
+    <p class="subtitulo">
+        {% if tipo == "sangria" %}Retirada de dinheiro do caixa (pede a autorização do gerente).
+        {% else %}Entrada de dinheiro no caixa (ex.: reforço de troco).{% endif %}
+        Dinheiro no caixa agora: <strong>{{ dinheiro_em_caixa | moeda }}</strong>
+    </p>
+    <form method="post" class="entrada-com-teclado"
+          {% if tipo == "sangria" %}data-exige-gerente="Sangria do caixa"{% endif %}>
+        {{ pin.csrf() }}
+        <div class="entrada-campos">
+            {{ valor.campo("valor", "Valor", dados.valor, foco=True) }}
+            {{ valor.texto_com_atalhos("motivo", "Motivo", dados.motivo, atalhos) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Registrar {{ nome_tipo | lower }}</button>
+            <a href="{{ url_for('caixa.painel') }}" class="botao botao-secundario botao-largo">Voltar</a>
+        </div>
+        <div class="entrada-teclado">{{ valor.teclado() }}</div>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{% if tipo == "sangria" %}{% include "componentes/autorizacao_gerente.html" %}{% endif %}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

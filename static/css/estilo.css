@@ -26,6 +26,11 @@
     --mesa-ocupada: #c62828;
     --mesa-conta-pedida: #ffcc00;
 
+    --caixa-aberto: #1e8c3a;
+    --caixa-fechado: #c62828;
+    --falta: #ff6b6b;
+    --confere: #6bdc8b;
+
     --toque-minimo: 48px;
     --fonte-titulo: "Anton", Impact, "Arial Narrow Bold", sans-serif;
     --fonte-texto: Roboto, "Segoe UI", Arial, sans-serif;
@@ -636,8 +641,221 @@ img {
     margin: 4px 0 4px 6px;
 }
 
+/* === Caixa: selo no cabeçalho === */
+.selo-caixa {
+    display: inline-block;
+    min-height: 48px;
+    min-height: var(--toque-minimo);
+    margin-right: 12px;
+    padding: 13px 12px;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    line-height: 22px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.selo-caixa-aberto {
+    background: #1e8c3a;
+    background: var(--caixa-aberto);
+}
+
+.selo-caixa-fechado {
+    background: #c62828;
+    background: var(--caixa-fechado);
+}
+
+.link {
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.aviso-caixa .botao {
+    margin: 8px 0 0 8px;
+}
+
+/* === Campos de dinheiro com teclado na tela === */
+.entrada-com-teclado {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: start;
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    margin: 0 -8px;
+}
+
+.entrada-campos {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 300px;
+    flex: 1 1 300px;
+    margin: 0 8px 16px;
+}
+
+.entrada-teclado {
+    -webkit-box-flex: 0;
+    -webkit-flex: 0 1 380px;
+    flex: 0 1 380px;
+    width: 380px;
+    max-width: 100%;
+    margin: 0 8px 16px;
+}
+
+.campo-valor-caixa {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.campo-valor-rs {
+    margin-right: 8px;
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 24px;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.campo input.entrada-valor {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 60px;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: right;
+}
+
+.campo-ativo input.entrada-valor {
+    border: 3px solid #ffcc00;
+    border: 3px solid var(--amarelo);
+}
+
+.teclado-valor .tecla {
+    min-height: 64px;
+}
+
+.teclado-valor .tecla-larga {
+    -webkit-flex: 0 0 98%;
+    flex: 0 0 98%;
+    width: 98%;
+    min-height: 52px;
+}
+
+.atalhos {
+    margin: -8px -4px 18px;
+}
+
+.atalhos .botao {
+    margin: 4px;
+}
+
+/* === Caixa: painel, tabelas e conferência === */
+.grade-acoes {
+    margin: 16px 0 8px;
+}
+
+.grade-acoes .botao {
+    margin: 0 12px 12px 0;
+}
+
+.secao-titulo {
+    margin: 24px 0 8px;
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-weight: normal;
+    font-size: 24px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.nota {
+    margin-top: 6px;
+    font-size: 15px;
+}
+
+.tabela {
+    width: 100%;
+    margin: 8px 0 16px;
+    border-collapse: collapse;
+    border-radius: 10px;
+    background: #003319;
+    background: var(--verde-escuro);
+}
+
+.tabela th,
+.tabela td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: left;
+}
+
+.tabela thead th {
+    color: #c0c0c0;
+    color: var(--cinza);
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.tabela tfoot th,
+.tabela tfoot td {
+    border-bottom: 0;
+    font-weight: bold;
+}
+
+.tabela .numero {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.diferenca-falta {
+    background: rgba(255, 107, 107, 0.15);
+}
+
+.diferenca-falta .diferenca {
+    color: #ff6b6b;
+    color: var(--falta);
+    font-weight: bold;
+}
+
+.diferenca-sobra .diferenca {
+    color: #ffcc00;
+    color: var(--amarelo);
+    font-weight: bold;
+}
+
+.diferenca-ok .diferenca {
+    color: #6bdc8b;
+    color: var(--confere);
+}
+
 /* === Celular (a partir de 360px) === */
 @media (max-width: 599px) {
+    .selo-caixa {
+        margin-right: 8px;
+        padding: 13px 8px;
+        font-size: 14px;
+    }
+    .tabela {
+        font-size: 15px;
+    }
+    .tabela th,
+    .tabela td {
+        padding: 10px 4px;
+    }
+    .tabela .numero {
+        white-space: normal;
+    }
     body {
         font-size: 16px;
     }

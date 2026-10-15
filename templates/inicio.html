@@ -3,9 +3,10 @@
 {% block conteudo %}
 <section class="menu">
     <h1 class="titulo">Olá, {{ usuario.nome }}</h1>
+    {% include "componentes/aviso_caixa.html" %}
     <div class="grade-menu">
         <span class="botao-menu botao-menu-em-breve">Mesas<small>em breve</small></span>
-        <span class="botao-menu botao-menu-em-breve">Caixa<small>em breve</small></span>
+        <a class="botao-menu" href="{{ url_for('caixa.painel') }}">Caixa</a>
         <span class="botao-menu botao-menu-em-breve">Produtos<small>em breve</small></span>
         <span class="botao-menu botao-menu-em-breve">Relatórios<small>em breve</small></span>
         <a class="botao-menu" href="{{ url_for('usuarios.lista') }}">Usuários</a>

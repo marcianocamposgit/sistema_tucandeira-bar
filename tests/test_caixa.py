@@ -61,6 +61,15 @@ def test_conferencia_e_fechamento(conexao, gerente, operador, autorizacao, caixa
         ("dinheiro", 16000, 15800), ("debito", 1800, 1800), ("credito", 0, 0), ("pix", 2500, 2500)]
     assert caixa.caixa_aberto(conexao) is None
 
+    resumo = caixa.resumo_fechamento(conexao, caixa_aberto.id)
+    assert resumo.caixa.observacao == "Faltou troco"
+    assert resumo.diferenca_total_centavos == -200
+
+
+def test_resumo_fechamento_recusa_caixa_aberto(conexao, caixa_aberto):
+    with pytest.raises(DadosInvalidosError):
+        caixa.resumo_fechamento(conexao, caixa_aberto.id)
+
 
 def test_fechar_exige_gerente_e_todas_as_formas(conexao, operador, autorizacao, caixa_aberto):
     with pytest.raises(PermissaoNegadaError):
