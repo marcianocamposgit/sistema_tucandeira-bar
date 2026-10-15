@@ -105,11 +105,19 @@ O navegador só oferece "Instalar app" e o modo tela cheia em conexões seguras 
    4. Repita em cada tablet. Se o IP ou a porta do servidor mudarem, é preciso refazer.
 2. **Navegador de quiosque (segunda opção):** instale um navegador de quiosque em tela cheia (ex.: Fully Kiosk Browser, no Android) e configure o endereço do servidor como página inicial. Útil também no iPad ou quando o Chrome não aceitar a configuração acima.
 
-### Se o tablet não conseguir acessar
+## Solução de problemas
 
-- Confira se o tablet e o servidor estão na mesma rede Wi-Fi.
-- Confira se o IP do servidor não mudou (por isso o IP fixo).
-- Confira se a porta está liberada no Firewall do Windows para redes **privadas** (o script de liberação é criado na Etapa 9 do roteiro) e se a rede do bar está marcada como Privada no Windows.
+### O tablet ou o celular não abre o sistema
+
+Siga os passos na ordem; cada um elimina uma causa.
+
+1. **O servidor está rodando?** No próprio computador servidor, abra `http://localhost:5000`. Se não abrir, o problema é no servidor (veja a janela/console do servidor).
+2. **O servidor responde pelo IP da rede?** Ainda no computador servidor, abra `http://<IP-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`). Se não abrir, confira o IP com `ipconfig` e se o servidor foi iniciado com `python servidor.py` (o `app.py` só escuta em `localhost`).
+3. **Mesma rede?** O tablet precisa estar no mesmo Wi-Fi do servidor (não na rede de visitantes nem nos dados móveis). Confira também se o IP do servidor não mudou (por isso o IP fixo).
+4. **Firewall do Windows:** a porta precisa estar liberada para redes **Privadas** (script da Etapa 9) e a rede do bar precisa estar marcada como **Privada** no Windows.
+5. **Isolamento de clientes no roteador:** se o tablet abre a página do roteador (ex.: `http://192.168.1.1`) mas não alcança o computador servidor em nenhuma porta — mesmo com o firewall do Windows desligado —, o roteador está impedindo que os aparelhos conversem entre si. É comum em roteadores de operadora e em redes de visitantes. O nome da opção varia: "Isolamento de AP", "AP Isolation", "Client Isolation", "Isolamento de clientes", "Wireless isolation".
+   - **Solução:** desligar essa opção no roteador (na rede usada pelo bar, não na de visitantes) ou usar um roteador próprio para o sistema.
+   - **Teste rápido para confirmar:** ligue o **Hotspot móvel** do Windows no computador servidor (Configurações → Rede e Internet → Hotspot móvel), conecte o tablet nesse hotspot e acesse `http://<IP-do-servidor-no-hotspot>:5000` (normalmente `http://192.168.137.1:5000`). Se funcionar pelo hotspot, o problema é o roteador. O hotspot serve só como teste: não é a solução definitiva para o bar.
 
 ## Segurança
 

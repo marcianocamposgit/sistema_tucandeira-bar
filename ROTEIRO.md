@@ -119,6 +119,13 @@ Primeiro acesso (cria o gerente), login tocando no nome + PIN no teclado da tela
 
 **Teste opcional (celulares):** acessar por um celular, conferir a comanda em abas na tela pequena e lançar um item na mesma comanda do tablet.
 
+**Pendência a investigar — aparelhos não alcançam o servidor (registrada em 14/10/2026):** no teste pela rede de casa, o celular acessa o roteador (`192.168.1.1`), mas não alcança o PC em nenhuma porta. Isso acontece mesmo com o Firewall do Windows desligado e com um listener TCP cru na porta 5001. No próprio PC, `curl http://192.168.1.8:5000` funciona. A causa provável é o **isolamento de clientes (AP isolation)** no roteador da operadora. Nesta etapa:
+> - Testar com o **Hotspot móvel do Windows** no PC servidor (tablet/celular conectado ao hotspot, acessando `http://192.168.137.1:5000`), para confirmar que o problema é o roteador e não o PC.
+> - No **roteador do bar**, verificar se há isolamento de AP / de clientes ligado (e se o tablet vai usar a rede principal, não a de visitantes); desligar ou prever um roteador próprio para o sistema.
+> - Manter atualizada a seção "Solução de problemas" do README.md.
+>
+> Até lá, as telas são testadas no navegador do PC, no modo de dispositivo.
+
 ---
 
 ## Etapa 10 — Backup automático, executável, início com o Windows e entrega
