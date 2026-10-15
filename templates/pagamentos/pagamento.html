@@ -149,8 +149,10 @@
             {{ pin.csrf() }}
             <input type="hidden" name="pagamento_id" value="">
             {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_estorno) }}
-            <button type="submit" class="botao botao-destaque botao-largo">Estornar</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-botoes">
+                <button type="submit" class="botao botao-destaque botao-largo">Estornar</button>
+                <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -158,17 +160,23 @@
 {% if desconto_permitido %}
 {# ---------- Desconto em R$: motivo + gerente ---------- #}
 <div class="sobreposicao" id="quadro-desconto" hidden>
-    <div class="quadro">
+    <div class="quadro quadro-largo">
         <h2 class="quadro-titulo">Dar desconto</h2>
         <p class="quadro-texto">Só em R$. Não pode passar do que falta pagar ({{ conta.saldo_centavos | moeda }}).</p>
         <form method="post" action="{{ url_for('pagamentos.desconto', comanda_id=comanda.id) }}"
-              data-exige-gerente="Desconto em {{ comanda.identificacao }}">
+              data-exige-gerente="Desconto em {{ comanda.identificacao }}" class="quadro-colunas">
             {{ pin.csrf() }}
-            {{ valor.campo("valor", "Valor do desconto", "") }}
-            {{ valor.teclado() }}
-            {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_desconto) }}
-            <button type="submit" class="botao botao-destaque botao-largo">Aplicar desconto</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-coluna">
+                {{ valor.campo("valor", "Valor do desconto", "") }}
+                {{ valor.teclado() }}
+            </div>
+            <div class="quadro-coluna">
+                {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_desconto) }}
+                <div class="quadro-botoes">
+                    <button type="submit" class="botao botao-destaque botao-largo">Aplicar desconto</button>
+                    <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+                </div>
+            </div>
         </form>
     </div>
 </div>

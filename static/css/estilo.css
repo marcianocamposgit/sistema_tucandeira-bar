@@ -499,8 +499,8 @@ img {
 
 .quadro {
     max-width: 420px;
-    margin: 24px auto;
-    padding: 20px;
+    margin: 8px auto;
+    padding: 16px 20px;
     border: 3px solid #ffcc00;
     border: 3px solid var(--amarelo);
     border-radius: 12px;
@@ -527,6 +527,93 @@ img {
 
 .lista-botoes .botao-largo:first-child {
     margin-top: 0;
+}
+
+/* Quadros cabem numa tela de 800 px de altura (PC e tablet em paisagem):
+   teclados mais baixos dentro dos quadros. */
+.quadro .tecla {
+    min-height: 60px;
+}
+
+.quadro .teclado-valor .tecla {
+    min-height: 50px;
+    font-size: 26px;
+}
+
+.quadro .teclado-valor .tecla-larga {
+    min-height: 44px;
+}
+
+.quadro .pin-pontos {
+    margin: 10px 0;
+}
+
+/* Quadro largo (desconto): valor e teclado à esquerda, motivo e botões à direita. */
+.quadro-largo {
+    max-width: 760px;
+}
+
+.quadro-colunas {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: start;
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    margin: 0 -10px;
+}
+
+.quadro-coluna {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 300px;
+    flex: 1 1 300px;
+    min-width: 0;
+    margin: 0 10px;
+}
+
+/* Confirmar e Voltar lado a lado quando houver largura. */
+.quadro-botoes {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 8px -4px 0;
+}
+
+.quadro-botoes .botao-largo {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 150px;
+    flex: 1 1 150px;
+    width: auto;
+    margin: 4px;
+}
+
+/* Muitos botões (ex.: mesas para juntar): duas colunas. */
+.lista-botoes-duas {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 0 -4px 8px;
+}
+
+.lista-botoes-duas .botao-largo,
+.lista-botoes-duas .botao-largo:first-child {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 40%;
+    flex: 1 1 40%;
+    width: auto;
+    margin: 4px;
+    padding: 10px 8px;
+    font-size: 18px;
+}
+
+.quadro-coluna .botao-largo:first-of-type {
+    margin-top: 4px;
 }
 
 /* === Login === */

@@ -99,8 +99,10 @@
             {{ pin.csrf() }}
             <input type="hidden" name="item_id" value="">
             {{ valor.texto_com_atalhos("observacao", "Observação (deixe em branco para tirar)", "", atalhos_observacao, maximo=100) }}
-            <button type="submit" class="botao botao-destaque botao-largo">Salvar observação</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-botoes">
+                <button type="submit" class="botao botao-destaque botao-largo">Salvar observação</button>
+                <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -116,8 +118,10 @@
             {{ pin.csrf() }}
             <input type="hidden" name="item_id" value="">
             {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_cancelamento) }}
-            <button type="submit" class="botao botao-destaque botao-largo">Cancelar 1 unidade</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-botoes">
+                <button type="submit" class="botao botao-destaque botao-largo">Cancelar 1 unidade</button>
+                <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -142,8 +146,10 @@
                 <input type="text" name="pessoas" value="{{ comanda.pessoas }}" inputmode="numeric" pattern="[0-9]*"
                        maxlength="2" autocomplete="off">
             </label>
-            <button type="submit" class="botao botao-destaque botao-largo">Salvar</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-botoes">
+                <button type="submit" class="botao botao-destaque botao-largo">Salvar</button>
+                <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -188,7 +194,7 @@
             Se ela estiver ocupada, a conta dela passa para esta comanda.</p>
         <form method="post" action="{{ url_for('mesas.juntar', comanda_id=comanda.id) }}">
             {{ pin.csrf() }}
-            <div class="lista-botoes">
+            <div class="lista-botoes lista-botoes-duas">
                 {% for e in outras_mesas %}
                 {% if e.status == "livre" %}
                 <button type="submit" name="mesa" value="{{ e.numero }}" class="botao botao-largo">Mesa {{ e.numero }} (livre)</button>
@@ -218,8 +224,10 @@
               data-texto-gerente="Cancelar {{ comanda.identificacao }}">
             {{ pin.csrf() }}
             {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_cancelar_comanda) }}
-            <button type="submit" class="botao botao-perigo botao-largo">Cancelar a comanda</button>
-            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            <div class="quadro-botoes">
+                <button type="submit" class="botao botao-perigo botao-largo">Cancelar a comanda</button>
+                <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+            </div>
         </form>
     </div>
 </div>
