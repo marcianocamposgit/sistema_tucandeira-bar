@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block titulo %}Relatórios — Tucandeira Rock Bar{% endblock %}
+
+{% macro baixar(relatorio) -%}
+<a href="{{ url_for('relatorios.baixar_csv', relatorio=relatorio, **args_csv) }}" class="botao botao-pequeno botao-secundario botao-csv">Baixar CSV</a>
+{%- endmacro %}
+
+{% macro ocorrencias(lista, vazio) -%}
+{% if lista %}
+<ul class="lista">
+    {% for o in lista %}
+    <li class="lista-item">
+        <div class="lista-item-info">
+            <strong>{{ o.tipo_nome }} — {{ o.valor_centavos | moeda }}</strong>
+            <span>{{ o.criado_em | data_hora }} · {{ o.comanda }}{% if o.descricao %} · {{ o.descricao }}{% endif %}</span>
+            <span>Motivo: {{ o.motivo }} · lançado por {{ o.usuario_nome }}{% if o.autorizado_por_nome %} · autorizado por {{ o.autorizado_por_nome }}{% endif %}</span>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="subtitulo">{{ vazio }}</p>
+{% endif %}
+{%- endmacro %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Relatórios</h1>
+
+    {# ---------- Período ---------- #}
+    <div class="filtros" role="navigation" aria-label="Período">
+        <a href="{{ url_for('relatorios.tela', periodo='dia') }}" class="aba-categoria{% if periodo.tipo == 'dia' %} aba-ativa{% endif %}">Hoje</a>
+        <a href="{{ url_for('relatorios.tela', periodo='semana') }}" class="aba-categoria{% if periodo.tipo == 'semana' %} aba-ativa{% endif %}">Esta semana</a>
+        <a href="{{ url_for('relatorios.tela', periodo='mes') }}" class="aba-categoria{% if periodo.tipo == 'mes' %} aba-ativa{% endif %}">Este mês</a>
+    </div>
+    <form method="get" action="{{ url_for('relatorios.tela') }}" class="cartao formulario-linha formulario-periodo">
+        <input type="hidden" name="periodo" value="intervalo">
+        <label class="campo">
+            <span class="campo-rotulo">De</span>
+            <input type="date" name="de" value="{{ periodo.inicio.isoformat() }}" required>
+        </label>
+        <label class="campo">
+            <span class="campo-rotulo">Até</span>
+            <input type="date" name="ate" value="{{ periodo.fim.isoformat() }}" required>
+        </label>
+        <button type="submit" class="botao{% if periodo.tipo == 'intervalo' %} botao-destaque{% endif %}">Ver período</button>
+    </form>
+    <p class="subtitulo periodo-escolhido">Período: <strong>{{ nome_periodo }}</strong> (pela data de cada venda)</p>
+
+    {# ---------- Vendas ---------- #}
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Vendas</h2>{{ baixar("vendas") }}
+    </div>
+    <div class="numeros-resumo">
+        <div class="numero-resumo numero-resumo-destaque"><span>Total vendido</span><strong>{{ resumo.total_centavos | moeda }}</strong></div>
+        <div class="numero-resumo"><span>Vendas</span><strong>{{ resumo.numero_vendas }}</strong></div>
+        <div class="numero-resumo"><span>Ticket médio</span><strong>{{ resumo.ticket_medio_centavos | moeda }}</strong></div>
+        <div class="numero-resumo"><span>Descontos</span><strong>{{ resumo.desconto_centavos | moeda }}</strong></div>
+    </div>
+    <table class="tabela">
+        <thead><tr><th scope="col">Forma de pagamento</th><th scope="col" class="numero">Total</th></tr></thead>
+        <tbody>
+            {% for forma, nome in formas.items() %}
+            <tr><th scope="row">{{ nome }}</th><td class="numero">{{ resumo.por_forma[forma] | moeda }}</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot><tr class="linha-saldo"><th scope="row">Total</th><td class="numero">{{ resumo.total_centavos | moeda }}</td></tr></tfoot>
+    </table>
+
+    {# ---------- Produtos mais vendidos ---------- #}
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Produtos mais vendidos</h2>{{ baixar("produtos") }}
+    </div>
+    {% if vendidos %}
+    <table class="tabela tabela-vendidos">
+        <thead><tr><th scope="col">Produto</th><th scope="col" class="numero">Qtd.</th><th scope="col" class="numero">Total</th></tr></thead>
+        <tbody>
+            {% for v in vendidos %}
+            <tr><td>{{ v.nome }}</td><td class="numero">{{ v.quantidade }}</td><td class="numero">{{ v.total_centavos | moeda }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="subtitulo">Nenhuma venda no período.</p>
+    {% endif %}
+
+    {# ---------- Cancelamentos e descontos ---------- #}
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Cancelamentos e estornos</h2>{{ baixar("cancelamentos") }}
+    </div>
+    {{ ocorrencias(cancelamentos, "Nenhum cancelamento ou estorno no período.") }}
+
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Descontos</h2>{{ baixar("descontos") }}
+    </div>
+    {{ ocorrencias(descontos, "Nenhum desconto no período.") }}
+
+    {# ---------- Estoque (situação de agora) ---------- #}
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Estoque em alerta</h2>{{ baixar("estoque") }}
+    </div>
+    <p class="subtitulo nota">Situação de agora, não depende do período.</p>
+    {% if estoque %}
+    <ul class="lista lista-produtos">
+        {% for x in estoque %}
+        <li>
+            <a class="lista-item lista-item-link estoque-{{ x.situacao_estoque }}" href="{{ url_for('produtos.detalhe', produto_id=x.id) }}">
+                <span class="lista-item-info">
+                    <strong>{{ x.nome }}</strong>
+                    <span>{{ x.categoria_nome }}</span>
+                </span>
+                <span class="produto-estoque">
+                    <strong class="produto-estoque-numero">{{ x.estoque }}</strong>
+                    <small>mínimo {{ x.estoque_minimo }}</small>
+                    <small class="selo-estoque">{{ situacoes[x.situacao_estoque] }}</small>
+                </span>
+                <span class="lista-item-seta" aria-hidden="true">›</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">Nenhum produto com estoque negativo, zerado ou abaixo do mínimo.</p>
+    {% endif %}
+
+    {# ---------- Fechamentos de caixa ---------- #}
+    <div class="secao-relatorio">
+        <h2 class="secao-titulo">Fechamentos de caixa</h2>{{ baixar("caixas") }}
+    </div>
+    {% for f in fechamentos %}
+    <div class="cartao cartao-fechamento">
+        <p class="fechamento-titulo"><strong>Caixa {{ f.caixa_id }}</strong> · aberto em {{ f.aberto_em | data_hora }} por {{ f.aberto_por_nome }} ·
+            fechado em {{ f.fechado_em | data_hora }} por {{ f.fechado_por_nome }}</p>
+        {% set conferencias = f.conferencias %}
+        {% set diferenca_total = f.diferenca_total_centavos %}
+        {% include "caixa/_conferencia.html" %}
+        <a href="{{ url_for('caixa.resumo', caixa_id=f.caixa_id) }}" class="link">Ver o fechamento completo ›</a>
+    </div>
+    {% else %}
+    <p class="subtitulo">Nenhum caixa fechado no período.</p>
+    {% endfor %}
+
+    <div class="rodape-acoes">
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Relatórios — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">Relatórios</h1>
+    <p>Os relatórios são só para gerente. Peça a um gerente para autorizar.</p>
+    <form method="post" action="{{ url_for('relatorios.acesso') }}" data-exige-gerente="Abrir os relatórios">
+        {{ pin.csrf() }}
+        <button type="submit" class="botao botao-destaque botao-largo">Pedir autorização do gerente</button>
+    </form>
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-largo">Voltar</a>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

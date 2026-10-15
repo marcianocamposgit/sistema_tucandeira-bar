@@ -114,7 +114,9 @@ Tela de produtos (`routes/produtos.py`, `templates/produtos/`), no menu inicial:
 
 ---
 
-## Etapa 8 — Relatórios
+## Etapa 8 — Relatórios ✅ concluída
+
+Relatórios (`services/relatorios.py`, `routes/relatorios.py`, `templates/relatorios/`), no menu inicial: gerente abre direto, operador com autorização do gerente (vale `ACESSO_TELA_RELATORIOS_MINUTOS`). Período Hoje, Esta semana (de segunda até hoje), Este mês ou intervalo com o seletor de data do navegador, sempre pela data de cada venda (dia de calendário). Vendas (total, número, ticket médio, descontos e total por forma, que soma o total vendido porque conta só pagamentos não estornados das vendas do período), produtos mais vendidos, cancelamentos e estornos (itens cancelados, comanda cancelada numa linha só com o valor de todos os itens, estornos) e descontos com quem lançou, quem autorizou e o motivo, estoque em alerta (situação de agora) e fechamentos de caixa com a conferência por forma. Cada seção com "Baixar CSV" (`;`, UTF-8 com BOM, valores como 1234,56). Listas longas em cartões, sem rolagem horizontal. 8 testes novos (totais, formas somando o total, venda depois da meia-noite no outro dia, mais vendidos, cancelamentos, diferenças do caixa, estoque e CSV). 173 testes pytest. O prompt original fica abaixo como registro.
 
 > Crie services/relatorios.py (com testes pytest só para os totais de dinheiro, estoque e caixa) e routes/relatorios.py com as telas (acesso de gerente). Relatórios por período (dia, semana, mês e intervalo personalizado com seletor de data do navegador): total vendido, número de vendas, total por forma de pagamento, total de descontos, produtos mais vendidos, cancelamentos e descontos (com responsável e motivo), produtos com estoque negativo ou abaixo do mínimo (destacados) e histórico de fechamentos de caixa com as diferenças. Botão para baixar cada relatório em CSV (separador `;` e UTF-8 com BOM para abrir certo no Excel). Tabelas legíveis no tablet (rolagem vertical, sem rolagem horizontal da página) e no computador servidor.
 

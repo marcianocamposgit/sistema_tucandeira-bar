@@ -59,6 +59,8 @@ TENTATIVAS_PIN = 5
 BLOQUEIO_PIN_SEGUNDOS = 60
 # Depois que o gerente autoriza, por quanto tempo o operador pode ver a tela de usuários.
 ACESSO_TELA_USUARIOS_MINUTOS = 5
+# Depois que o gerente autoriza, por quanto tempo o operador pode ver os relatórios.
+ACESSO_TELA_RELATORIOS_MINUTOS = 15
 NOME_ARQUIVO_SECRET_KEY = "secret_key"
 
 # === SESSÃO E TELAS ===

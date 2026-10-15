@@ -351,7 +351,8 @@ img {
     color: var(--cinza);
 }
 
-.campo input[type="text"] {
+.campo input[type="text"],
+.campo input[type="date"] {
     display: block;
     width: 100%;
     min-height: 52px;
@@ -364,7 +365,8 @@ img {
     font-size: 20px;
 }
 
-.campo input[type="text"]:focus {
+.campo input[type="text"]:focus,
+.campo input[type="date"]:focus {
     border-color: #ffcc00;
     border-color: var(--amarelo);
     outline: none;
@@ -1927,6 +1929,89 @@ tr.estoque-negativo td {
     text-decoration: none;
 }
 
+/* === Relatórios === */
+.formulario-periodo .campo {
+    -webkit-flex: 1 1 140px;
+    flex: 1 1 140px;
+}
+
+.periodo-escolhido {
+    margin: 12px 0 0;
+}
+
+/* Título da seção com o botão "Baixar CSV" ao lado. */
+.secao-relatorio {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+.secao-relatorio .secao-titulo {
+    margin: 8px 12px 8px 0;
+}
+
+.numeros-resumo {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 0 -6px 8px;
+}
+
+.numero-resumo {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 150px;
+    flex: 1 1 150px;
+    margin: 6px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #003319;
+    background: var(--verde-escuro);
+}
+
+.numero-resumo span {
+    display: block;
+    color: #c0c0c0;
+    color: var(--cinza);
+    font-size: 15px;
+}
+
+.numero-resumo strong {
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-weight: normal;
+    font-size: 26px;
+}
+
+.numero-resumo-destaque strong {
+    color: #ffcc00;
+    color: var(--amarelo);
+    font-size: 30px;
+}
+
+.tabela-vendidos td:first-child {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.cartao-fechamento {
+    margin-bottom: 12px;
+}
+
+.fechamento-titulo {
+    margin: 0 0 4px;
+}
+
 /* Telas largas (PC): 4 produtos por linha no cardápio. */
 @media (min-width: 1100px) {
     .produto {
@@ -2035,6 +2120,10 @@ tr.estoque-negativo td {
     }
     .cabecalho-quem {
         text-align: left;
+    }
+    .numero-resumo-destaque strong {
+        font-size: 24px;
+        white-space: nowrap;
     }
     .cabecalho-usuario .botao {
         max-width: 110px;  /* "Trocar / usuário" em duas linhas */
