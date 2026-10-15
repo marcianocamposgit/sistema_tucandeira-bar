@@ -96,16 +96,27 @@ def registrar_suprimento(conexao, valor_centavos, motivo, usuario_id, agora=None
                                   usuario_id, None, agora)
 
 
-def registrar_sangria(conexao, valor_centavos, motivo, usuario_id, autorizacao, agora=None):
-    """Retirada de dinheiro do caixa. Exige gerente e não pode passar do dinheiro em caixa."""
+def _conferir_sangria(conexao, valor_centavos, motivo):
+    """Valor, motivo e limite do dinheiro em caixa. Devolve (caixa, motivo limpo)."""
     exigir_centavos(valor_centavos, "o valor", permitir_zero=False)
     motivo = exigir_texto(motivo, "o motivo da sangria", maximo=200)
+    caixa = exigir_caixa_aberto(conexao)
+    if valor_centavos > calcular_esperado(conexao, caixa.id)["dinheiro"]:
+        raise DadosInvalidosError("A sangria é maior que o dinheiro que deveria estar no caixa.")
+    return caixa, motivo
+
+
+def validar_sangria(conexao, valor_centavos, motivo):
+    """Confere a sangria antes de pedir o PIN do gerente (não grava nada)."""
+    _conferir_sangria(conexao, valor_centavos, motivo)
+
+
+def registrar_sangria(conexao, valor_centavos, motivo, usuario_id, autorizacao, agora=None):
+    """Retirada de dinheiro do caixa. Exige gerente e não pode passar do dinheiro em caixa."""
     with transacao(conexao):
+        # Confere de novo dentro da transação: outro aparelho pode ter mexido no caixa.
+        caixa, motivo = _conferir_sangria(conexao, valor_centavos, motivo)
         gerente = verificar_gerente(conexao, autorizacao)
-        caixa = exigir_caixa_aberto(conexao)
-        em_caixa = calcular_esperado(conexao, caixa.id)["dinheiro"]
-        if valor_centavos > em_caixa:
-            raise DadosInvalidosError("A sangria é maior que o dinheiro que deveria estar no caixa.")
         return _inserir_movimento(conexao, caixa.id, "sangria", valor_centavos, motivo,
                                   usuario_id, gerente.id, agora)
 

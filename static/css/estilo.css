@@ -157,8 +157,35 @@ img {
     text-decoration: none;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* No tablet, um toque longo selecionaria o texto: botões, teclados, títulos e
+   quadros sobrepostos não são selecionáveis (campos de texto continuam). */
+.botao,
+.tecla,
+.teclado,
+.pin-pontos,
+.botao-menu,
+.botao-usuario,
+.cabecalho,
+.selo-caixa,
+.titulo,
+.secao-titulo,
+.quadro-titulo,
+.sobreposicao {
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
+}
+
+.sobreposicao input,
+.sobreposicao textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
 .botao:active {
@@ -408,8 +435,6 @@ img {
     font-size: 32px;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
 }
 
 .tecla:active {
@@ -782,6 +807,11 @@ img {
 .nota {
     margin-top: 6px;
     font-size: 15px;
+}
+
+/* Botões no fim da página, separados do texto de cima. */
+.rodape-acoes {
+    margin-top: 24px;
 }
 
 .tabela {

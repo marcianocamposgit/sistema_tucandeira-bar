@@ -35,6 +35,18 @@ def test_sangria_exige_gerente_e_motivo(conexao, operador, autorizacao, caixa_ab
         caixa.registrar_sangria(conexao, 10001, "Depósito", operador.id, autorizacao)
 
 
+def test_validar_sangria_antes_do_gerente(conexao, operador, caixa_aberto):
+    # A tela confere o valor antes de pedir o PIN: sem gerente e sem gravar nada.
+    caixa.validar_sangria(conexao, 10000, "Depósito")
+    with pytest.raises(DadosInvalidosError):
+        caixa.validar_sangria(conexao, 10001, "Depósito")
+    with pytest.raises(DadosInvalidosError):
+        caixa.validar_sangria(conexao, 0, "Depósito")
+    with pytest.raises(DadosInvalidosError):
+        caixa.validar_sangria(conexao, 2000, "  ")
+    assert caixa.listar_movimentos(conexao, caixa_aberto.id) == []
+
+
 def test_conferencia_e_fechamento(conexao, gerente, operador, autorizacao, caixa_aberto):
     caixa.registrar_suprimento(conexao, 5000, "Reforço de troco", operador.id)
     caixa.registrar_sangria(conexao, 3000, "Compra de gelo", operador.id, autorizacao)

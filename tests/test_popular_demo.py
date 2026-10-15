@@ -72,6 +72,19 @@ def test_popular(banco_dev):
     assert mesa2.pago_centavos == 3200 and mesa2.saldo_centavos > 0
 
 
+def test_popular_sem_movimento_hoje(banco_dev):
+    _, con = banco_dev
+    resumo = popular_demo.popular(con, hoje=date(2026, 10, 14), movimento_hoje=False)
+    assert resumo["caixas_fechados"] == 12 and resumo["vendas"] > 100
+    assert caixa.caixa_aberto(con) is None and not resumo["caixa_aberto"]
+    assert resumo["comandas_abertas"] == 0
+    # Nenhuma comanda aberta no dia atual (só o histórico das noites anteriores).
+    assert _contar(con, "SELECT COUNT(*) FROM comandas WHERE aberta_em >= '2026-10-14'") == 0
+    assert _contar(con, "SELECT COUNT(*) FROM pagamentos WHERE criado_em >= '2026-10-14'") == 0
+    assert _contar(con, "SELECT COUNT(*) FROM caixas WHERE aberto_em >= '2026-10-14' "
+                        "OR fechado_em >= '2026-10-14'") == 0
+
+
 def _contar(con, sql):
     return con.execute(sql).fetchone()[0]
 

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Confirmar sangria — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Confirmar sangria</h1>
+    <p class="subtitulo">Passo 2 de 2: confira e peça ao gerente para confirmar com o PIN.</p>
+
+    <table class="tabela">
+        <tbody>
+            <tr>
+                <th scope="row">Valor</th>
+                <td class="numero"><strong>{{ valor | moeda }}</strong></td>
+            </tr>
+            <tr>
+                <th scope="row">Motivo</th>
+                <td>{{ dados.motivo }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <form method="post" data-exige-gerente="Sangria de {{ valor | moeda }}">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="confirmar">
+        <input type="hidden" name="valor" value="{{ dados.valor }}">
+        <input type="hidden" name="motivo" value="{{ dados.motivo }}">
+        <button type="submit" class="botao botao-destaque botao-largo">Confirmar sangria</button>
+    </form>
+    <form method="post">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="corrigir">
+        <input type="hidden" name="valor" value="{{ dados.valor }}">
+        <input type="hidden" name="motivo" value="{{ dados.motivo }}">
+        <button type="submit" class="botao botao-secundario botao-largo">Corrigir</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

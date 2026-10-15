@@ -70,6 +70,8 @@ Desenvolvimento (servidor do Flask com recarga automática — não usar no bar)
 python app.py
 ```
 
+Atalho para desenvolvedores no Windows: `iniciar.bat`, na raiz do projeto, encerra um servidor anterior que esteja usando a porta 5000, abre o navegador em `http://localhost:5000` e inicia `python servidor.py` (dá para abrir com dois cliques). Precisa do Python instalado; não é o instalador do bar.
+
 Para rodar os testes:
 
 ```
@@ -81,6 +83,7 @@ Para encher o banco de **desenvolvimento** com dados de demonstração (usuário
 ```
 python scripts/popular_demo.py            # num banco ainda sem usuários
 python scripts/popular_demo.py --recriar   # guarda um backup e recomeça do zero
+python scripts/popular_demo.py --recriar --sem-movimento-hoje   # só o histórico: hoje sem caixa aberto nem comandas
 ```
 
 Usuários de demonstração (nome / PIN): Gerente Demo / 1234, Ana / 1111, Bruno / 2222.

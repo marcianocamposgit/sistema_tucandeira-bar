@@ -100,28 +100,43 @@ def abrir():
 # ============================================================
 # SUPRIMENTO E SANGRIA
 # ============================================================
+MENSAGEM_REGISTRADO = {"suprimento": "Suprimento de {} registrado.", "sangria": "Sangria de {} registrada."}
+
+
 @bp.route("/<any(suprimento, sangria):tipo>", methods=["GET", "POST"])
 @login_obrigatorio
 def movimento(tipo):
+    """Suprimento: um passo. Sangria: confere valor e motivo e só então pede o PIN do gerente."""
     conexao = obter_conexao()
     atual = caixa.exigir_caixa_aberto(conexao)
     dados = {"valor": "", "motivo": ""}
-    if request.method == "POST":
+    acao = request.form.get("acao", "")
+    if request.method == "POST" and acao != "corrigir":
         dados = {"valor": request.form.get("valor", ""), "motivo": request.form.get("motivo", "")}
+        valor = None
         try:
             valor = ler_moeda(dados["valor"], "o valor")
-            if tipo == "sangria":
+            if tipo == "suprimento":
+                caixa.registrar_suprimento(conexao, valor, dados["motivo"], g.usuario.id)
+            elif acao == "confirmar":
                 autorizacao = autorizacao_do_formulario()
                 caixa.registrar_sangria(conexao, valor, dados["motivo"], g.usuario.id, autorizacao)
             else:
-                caixa.registrar_suprimento(conexao, valor, dados["motivo"], g.usuario.id)
+                # Passo 1: valor e motivo conferidos antes de chamar o gerente.
+                caixa.validar_sangria(conexao, valor, dados["motivo"])
+                return render_template("caixa/sangria_confirmar.html", dados=dados, valor=valor)
         except CaixaFechadoError:
             raise
         except ErroDeNegocio as erro:
             flash(str(erro), "erro")
+            if acao == "confirmar" and valor is not None:
+                # PIN errado ou o caixa mudou: continua na confirmação, com "Corrigir".
+                return render_template("caixa/sangria_confirmar.html", dados=dados, valor=valor)
         else:
-            flash(f"{tipo.capitalize()} de {formatar_moeda(valor)} registrado.", "sucesso")
+            flash(MENSAGEM_REGISTRADO[tipo].format(formatar_moeda(valor)), "sucesso")
             return redirect(url_for("caixa.painel"))
+    elif acao == "corrigir":
+        dados = {"valor": request.form.get("valor", ""), "motivo": request.form.get("motivo", "")}
     return render_template(
         "caixa/movimento.html",
         tipo=tipo,

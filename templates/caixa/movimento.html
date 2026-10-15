@@ -12,13 +12,13 @@
         {% else %}Entrada de dinheiro no caixa (ex.: reforço de troco).{% endif %}
         Dinheiro no caixa agora: <strong>{{ dinheiro_em_caixa | moeda }}</strong>
     </p>
-    <form method="post" class="entrada-com-teclado"
-          {% if tipo == "sangria" %}data-exige-gerente="Sangria do caixa"{% endif %}>
+    <form method="post" class="entrada-com-teclado">
         {{ pin.csrf() }}
         <div class="entrada-campos">
             {{ valor.campo("valor", "Valor", dados.valor, foco=True) }}
             {{ valor.texto_com_atalhos("motivo", "Motivo", dados.motivo, atalhos) }}
-            <button type="submit" class="botao botao-destaque botao-largo">Registrar {{ nome_tipo | lower }}</button>
+            <button type="submit" class="botao botao-destaque botao-largo">
+                {% if tipo == "sangria" %}Continuar{% else %}Registrar suprimento{% endif %}</button>
             <a href="{{ url_for('caixa.painel') }}" class="botao botao-secundario botao-largo">Voltar</a>
         </div>
         <div class="entrada-teclado">{{ valor.teclado() }}</div>
@@ -26,5 +26,4 @@
 </section>
 {% endblock %}
 
-{% block quadros %}{% if tipo == "sangria" %}{% include "componentes/autorizacao_gerente.html" %}{% endif %}{% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

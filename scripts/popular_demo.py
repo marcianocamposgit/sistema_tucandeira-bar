@@ -3,6 +3,8 @@
 Uso:
     python scripts/popular_demo.py             # banco vazio (só com o cardápio inicial)
     python scripts/popular_demo.py --recriar   # guarda um backup e recria o banco de desenvolvimento
+    python scripts/popular_demo.py --recriar --sem-movimento-hoje
+        # só o histórico: hoje fica sem caixa aberto e sem comandas
 
 Recusa-se a rodar no executável, fora da pasta data/ do projeto ou num banco
 marcado como produção. Usa os próprios services (com o relógio simulado), então
@@ -103,12 +105,18 @@ def _pagar(conexao, sorteio, comanda_id, forma, valor, garcom, momento):
                                           recebido_centavos=recebido, agora=momento)
 
 
-def _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto):
-    """Atende clientes um de cada vez, das 18h30 até a madrugada. Devolve o nº de vendas."""
+def _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto,
+                   ultimo_cliente=None):
+    """Atende clientes um de cada vez, das 18h30 até a madrugada. Devolve o nº de vendas.
+
+    Com `ultimo_cliente` (datetime), ninguém mais é atendido a partir desse horário.
+    """
     momento = datetime.combine(dia, time(18, 30))
     clientes = sorteio.randint(6, 10) + (5 if dia.weekday() in (4, 5) else 0)  # sexta e sábado: mais cheio
     vendas = 0
     for numero in range(clientes):
+        if ultimo_cliente and momento >= ultimo_cliente:
+            break
         garcom = sorteio.choice(operadores)
         if sorteio.random() < 0.7:
             comanda = comandas.abrir_mesa(conexao, sorteio.randint(1, config.NUM_MESAS), garcom.id,
@@ -165,8 +173,12 @@ def _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produto
     return vendas
 
 
-def popular(conexao, hoje=None, dias=14, semente=42):
-    """Cria os dados de demonstração. Devolve um resumo (dict)."""
+def popular(conexao, hoje=None, dias=14, semente=42, movimento_hoje=True):
+    """Cria os dados de demonstração. Devolve um resumo (dict).
+
+    Com movimento_hoje=False, cria só o histórico: nenhum caixa aberto e nenhuma
+    comanda no dia atual (a noite de ontem termina e fecha o caixa antes da meia-noite).
+    """
     if usuarios.existe_usuario(conexao):
         raise DemoJaPopuladaError(
             "O banco já tem usuários. Use --recriar para começar de novo a partir de um banco vazio.")
@@ -218,13 +230,18 @@ def popular(conexao, hoje=None, dias=14, semente=42):
                     produtos.registrar_entrada(conexao, produto.id, quantidade, responsavel.id,
                                                custo_unitario_centavos=produto.preco_centavos * 45 // 100,
                                                observacao="Compra semanal", agora=abertura - timedelta(hours=2))
-        vendas += _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto=True)
+        # Sem movimento hoje: a noite de ontem termina antes da meia-noite (cada
+        # atendimento leva no máximo ~2h10), para nada ficar com a data de hoje.
+        termina_ontem = not movimento_hoje and atras == 1
+        vendas += _simular_noite(conexao, sorteio, dia, operadores, autorizacao, lista_produtos, com_desconto=True,
+                                 ultimo_cliente=datetime.combine(dia, time(21, 30)) if termina_ontem else None)
         esperado = caixa.calcular_esperado(conexao, caixa.exigir_caixa_aberto(conexao).id)
         contado = dict(esperado)
         contado["dinheiro"] = max(0, esperado["dinheiro"] + sorteio.choice([0, 0, 0, -500, -200, 300, 1000]))
+        fechamento = (datetime.combine(dia, time(23, 50)) if termina_ontem
+                      else datetime.combine(dia + timedelta(days=1), time(2, 0)))
         caixa.fechar(conexao, contado, responsavel.id, autorizacao,
-                     observacao=None if contado == esperado else "Diferença conferida",
-                     agora=datetime.combine(dia + timedelta(days=1), time(2, 0)))
+                     observacao=None if contado == esperado else "Diferença conferida", agora=fechamento)
         caixas_fechados += 1
 
     configuracoes.definir_desconto_permitido(conexao, False, gerente.id, autorizacao,
@@ -240,7 +257,21 @@ def popular(conexao, hoje=None, dias=14, semente=42):
     produtos.ajustar_contagem(conexao, por_nome["Isqueiro"].id, 0, "Contagem semanal: acabou",
                               operadores[1].id, autorizacao, agora=momento)
 
-    # --- Hoje: caixa aberto e algumas comandas em andamento ---
+    if movimento_hoje:
+        _movimento_de_hoje(conexao, operadores, autorizacao, por_nome)
+
+    return {
+        "usuarios": [(n, p, perfil) for n, p, perfil in USUARIOS_DEMO],
+        "produtos": len(produtos.listar_produtos(conexao)),
+        "caixas_fechados": caixas_fechados,
+        "vendas": vendas,
+        "caixa_aberto": caixa.caixa_aberto(conexao) is not None,
+        "comandas_abertas": len(comandas.listar_abertas(conexao)),
+    }
+
+
+def _movimento_de_hoje(conexao, operadores, autorizacao, por_nome):
+    """Hoje: caixa aberto e algumas comandas em andamento."""
     agora = datetime.now()
     ana, bruno = operadores
     caixa.abrir(conexao, 15000, ana.id, agora=agora - timedelta(hours=2))
@@ -276,14 +307,6 @@ def popular(conexao, hoje=None, dias=14, semente=42):
     dani = comandas.abrir_balcao(conexao, "Dani", bruno.id, agora=agora - timedelta(minutes=10))
     lancar(dani, "Marlboro 20un", por=bruno, minutos_atras=1)  # ainda dá para remover sem PIN
 
-    return {
-        "usuarios": [(n, p, perfil) for n, p, perfil in USUARIOS_DEMO],
-        "produtos": len(produtos.listar_produtos(conexao)),
-        "caixas_fechados": caixas_fechados,
-        "vendas": vendas,
-        "comandas_abertas": len(comandas.listar_abertas(conexao)),
-    }
-
 
 def _recriar(caminho_banco):
     """Guarda um backup do banco de desenvolvimento e o apaga (com -wal e -shm)."""
@@ -300,6 +323,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Dados de demonstração para o banco de desenvolvimento.")
     parser.add_argument("--recriar", action="store_true",
                         help="guarda um backup e recria o banco de desenvolvimento antes de popular")
+    parser.add_argument("--sem-movimento-hoje", action="store_true",
+                        help="cria só o histórico, sem caixa aberto nem comandas no dia atual")
     args = parser.parse_args(argv)
 
     pasta_dados = config.PASTA_DADOS
@@ -324,7 +349,7 @@ def main(argv=None):
             backup = fazer_backup(caminho_banco, Path(pasta_dados) / config.NOME_PASTA_BACKUPS,
                                   manter=config.BACKUPS_MANTIDOS)
             print(f"Backup antes de popular: {backup}")
-        resumo = popular(conexao)
+        resumo = popular(conexao, movimento_hoje=not args.sem_movimento_hoje)
     except (AmbienteProibidoError, DemoJaPopuladaError) as erro:
         print(f"Recusado: {erro}")
         return 1
@@ -334,7 +359,10 @@ def main(argv=None):
     print("\nDados de demonstração criados:")
     print(f"  {resumo['produtos']} produtos ativos")
     print(f"  {resumo['caixas_fechados']} caixas fechados nos dias anteriores, com {resumo['vendas']} vendas")
-    print(f"  caixa de hoje aberto com {resumo['comandas_abertas']} comandas em andamento")
+    if resumo["caixa_aberto"]:
+        print(f"  caixa de hoje aberto com {resumo['comandas_abertas']} comandas em andamento")
+    else:
+        print("  hoje sem movimento: caixa fechado e nenhuma comanda aberta")
     print("\nUsuários (nome / PIN):")
     for nome, pin, perfil in resumo["usuarios"]:
         print(f"  {nome:<14} {pin}   ({perfil})")
