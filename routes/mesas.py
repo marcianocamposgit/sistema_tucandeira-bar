@@ -95,8 +95,10 @@ def _estado_da_tela_de_mesas(conexao):
 @login_obrigatorio
 def mesas():
     conexao = obter_conexao()
+    alertas = produtos.listar_alertas_estoque(conexao) if g.usuario.gerente else []
     return render_template("mesas/mesas.html", estado=_estado_da_tela_de_mesas(conexao),
-                           intervalo=config.INTERVALO_ATUALIZACAO_MESAS)
+                           intervalo=config.INTERVALO_ATUALIZACAO_MESAS,
+                           alertas_estoque=plural(len(alertas), "produto", "produtos") if alertas else "")
 
 
 @bp.route("/mesas/estado")
@@ -179,6 +181,8 @@ def _estado_comanda(conexao, comanda_id):
         "pago": formatar_moeda(conta.pago_centavos) if conta.pago_centavos else "",
         "saldo": formatar_moeda(conta.saldo_centavos),
         "itens_html": render_template("mesas/_itens.html", grupos=grupos),
+        # Muda quando o cardápio muda (produto desativado, categoria nova...): a tela se recarrega.
+        "cardapio": produtos.assinatura_cardapio(conexao),
     }
 
 

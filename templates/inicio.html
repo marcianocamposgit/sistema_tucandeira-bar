@@ -7,7 +7,7 @@
     <div class="grade-menu">
         <a class="botao-menu" href="{{ url_for('mesas.mesas') }}">Mesas<small>e balcão</small></a>
         <a class="botao-menu" href="{{ url_for('caixa.painel') }}">Caixa</a>
-        <span class="botao-menu botao-menu-em-breve">Produtos<small>em breve</small></span>
+        <a class="botao-menu" href="{{ url_for('produtos.lista') }}">Produtos<small>e estoque</small></a>
         <span class="botao-menu botao-menu-em-breve">Relatórios<small>em breve</small></span>
         <a class="botao-menu" href="{{ url_for('usuarios.lista') }}">Usuários</a>
         <a class="botao-menu" href="{{ url_for('auth.meu_pin') }}">Trocar meu PIN</a>

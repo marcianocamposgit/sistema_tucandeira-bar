@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from models import AutorizacaoGerente
@@ -110,3 +112,39 @@ def test_situacao_do_estoque(conexao, gerente, autorizacao):
     produtos.ajustar_contagem(conexao, 2, 0, "Acabou", gerente.id, autorizacao)
     assert produtos.obter_produto(conexao, 2).situacao_estoque == "zerado"
     assert produtos.obter_produto(conexao, 3).situacao_estoque == "ok"
+
+
+def test_historico_fecha_com_o_estoque_incluindo_vendas(conexao, gerente, operador, autorizacao):
+    from services import caixa, comandas, pagamentos
+    skol = produtos.cadastrar_produto(conexao, "Skol Lata", _id_categoria(conexao, "Bebida"), 700,
+                                      gerente.id, autorizacao, estoque_inicial=10,
+                                      agora=datetime(2026, 10, 15, 18, 0))
+    produtos.registrar_entrada(conexao, skol.id, 12, operador.id, agora=datetime(2026, 10, 15, 18, 5))
+    produtos.registrar_perda(conexao, skol.id, 2, "Lata amassada", operador.id, autorizacao,
+                             agora=datetime(2026, 10, 15, 18, 10))
+    caixa.abrir(conexao, 0, operador.id, agora=datetime(2026, 10, 15, 18, 15))
+    c = comandas.abrir_balcao(conexao, "Ana", operador.id, agora=datetime(2026, 10, 15, 18, 20))
+    comandas.lancar_item(conexao, c.id, skol.id, operador.id, quantidade=3, agora=datetime(2026, 10, 15, 18, 20))
+    pagamentos.registrar_pagamento(conexao, c.id, "pix", 2100, operador.id, agora=datetime(2026, 10, 15, 18, 30))
+    produtos.ajustar_contagem(conexao, skol.id, 15, "Contagem do fim do dia", operador.id, autorizacao,
+                              agora=datetime(2026, 10, 15, 19, 0))
+
+    historico = produtos.historico_estoque(conexao, skol.id)
+    assert [(h.tipo, h.quantidade) for h in historico] == [
+        ("ajuste", -2), ("venda", -3), ("perda", -2), ("entrada", 12), ("entrada", 10)]
+    assert historico[1].descricao == f"Comanda {c.id}" and historico[1].tipo_nome == "Venda"
+    assert historico[0].autorizado_por_nome == "Gerente"
+    # A soma do histórico é o estoque atual.
+    assert sum(h.quantidade for h in historico) == produtos.obter_produto(conexao, skol.id).estoque == 15
+
+
+def test_assinatura_do_cardapio_muda_quando_o_cardapio_muda(conexao, gerente, autorizacao):
+    antes = produtos.assinatura_cardapio(conexao)
+    assert produtos.assinatura_cardapio(conexao) == antes  # nada mudou
+    produtos.registrar_entrada(conexao, 1, 5, gerente.id)  # estoque não muda o cardápio
+    assert produtos.assinatura_cardapio(conexao) == antes
+    produtos.desativar_produto(conexao, 1, gerente.id, autorizacao)
+    depois = produtos.assinatura_cardapio(conexao)
+    assert depois != antes
+    produtos.criar_categoria(conexao, "Doses", gerente.id, autorizacao)
+    assert produtos.assinatura_cardapio(conexao) != depois

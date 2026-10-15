@@ -59,3 +59,19 @@ class MovimentoEstoque:
     @property
     def tipo_nome(self):
         return TIPOS_MOVIMENTO.get(self.tipo, self.tipo)
+
+
+@dataclass
+class LinhaHistoricoEstoque:
+    """Uma linha do histórico de estoque de um produto: movimento (entrada,
+    perda, ajuste) ou baixa por venda. `quantidade` com sinal (+ entra, − sai)."""
+    criado_em: str
+    tipo: str  # 'entrada', 'perda', 'ajuste' ou 'venda'
+    quantidade: int
+    descricao: str
+    usuario_nome: str
+    autorizado_por_nome: Optional[str] = None
+
+    @property
+    def tipo_nome(self):
+        return "Venda" if self.tipo == "venda" else TIPOS_MOVIMENTO.get(self.tipo, self.tipo)

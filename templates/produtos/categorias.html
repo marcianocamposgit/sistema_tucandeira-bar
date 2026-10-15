@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Categorias — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">Categorias</h1>
+        <a href="{{ url_for('produtos.lista') }}" class="botao botao-secundario botao-pequeno">‹ Produtos</a>
+    </div>
+    <p class="subtitulo">Cada alteração pede a autorização do gerente. Só dá para desativar uma categoria sem produtos ativos.</p>
+
+    <form method="post" class="cartao formulario-linha" data-exige-gerente="Criar categoria">
+        {{ pin.csrf() }}
+        <input type="hidden" name="acao" value="criar">
+        <label class="campo">
+            <span class="campo-rotulo">Nova categoria</span>
+            <input type="text" name="nome" maxlength="30" autocomplete="off" autocapitalize="words" required>
+        </label>
+        <button type="submit" class="botao botao-destaque">Criar</button>
+    </form>
+
+    <ul class="lista">
+        {% for c in categorias %}
+        <li class="lista-item{% if not c.ativo %} lista-item-inativo{% endif %}">
+            <form method="post" class="formulario-linha formulario-categoria" data-exige-gerente="Renomear {{ c.nome }}">
+                {{ pin.csrf() }}
+                <input type="hidden" name="acao" value="renomear">
+                <input type="hidden" name="categoria_id" value="{{ c.id }}">
+                <label class="campo">
+                    <span class="campo-rotulo">{{ ativos[c.id] }}{% if not c.ativo %} · desativada{% endif %}</span>
+                    <input type="text" name="nome" value="{{ c.nome }}" maxlength="30" autocomplete="off" required
+                           aria-label="Nome da categoria {{ c.nome }}">
+                </label>
+                <button type="submit" class="botao botao-pequeno">Renomear</button>
+            </form>
+            <form method="post" class="form-inline" data-exige-gerente="{{ 'Desativar' if c.ativo else 'Reativar' }} {{ c.nome }}">
+                {{ pin.csrf() }}
+                <input type="hidden" name="acao" value="{{ 'desativar' if c.ativo else 'reativar' }}">
+                <input type="hidden" name="categoria_id" value="{{ c.id }}">
+                <button type="submit" class="botao botao-pequeno {{ 'botao-perigo' if c.ativo else 'botao-secundario' }}">
+                    {{ "Desativar" if c.ativo else "Reativar" }}</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

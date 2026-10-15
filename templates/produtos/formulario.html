@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% set titulo_tela = "Editar " ~ produto.nome if produto else "Novo produto" %}
+{% block titulo %}{{ titulo_tela }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina pagina-larga">
+    <div class="pagina-topo">
+        <h1 class="titulo">{{ titulo_tela }}</h1>
+        <a href="{{ url_for('produtos.detalhe', produto_id=produto.id) if produto else url_for('produtos.lista') }}"
+           class="botao botao-secundario botao-pequeno">‹ Voltar</a>
+    </div>
+    <p class="subtitulo">Salvar pede a autorização do gerente.{% if produto %} O estoque só muda por entrada, perda ou ajuste.{% endif %}</p>
+
+    <form method="post" class="entrada-com-teclado"
+          data-exige-gerente="{{ 'Salvar ' ~ produto.nome if produto else 'Cadastrar produto' }}">
+        {{ pin.csrf() }}
+        <div class="entrada-campos">
+            <label class="campo">
+                <span class="campo-rotulo">Nome</span>
+                <input type="text" name="nome" value="{{ dados.nome }}" maxlength="60" autocomplete="off"
+                       autocapitalize="words" required{% if not produto %} autofocus{% endif %}>
+            </label>
+
+            <p class="campo-rotulo">Categoria</p>
+            <div class="opcoes-botao" role="radiogroup" aria-label="Categoria">
+                {% for c in categorias %}
+                <label class="opcao-botao">
+                    <input type="radio" name="categoria_id" value="{{ c.id }}"{% if dados.categoria_id == c.id %} checked{% endif %}>
+                    <span>{{ c.nome }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            {{ valor.campo("preco", "Preço de venda", dados.preco, foco=produto is not none) }}
+            {% if not produto %}
+            {{ valor.quantidade("estoque_inicial", "Estoque inicial (opcional)", dados.estoque_inicial) }}
+            {% endif %}
+            {{ valor.quantidade("estoque_minimo", "Estoque mínimo (alerta abaixo disso)", dados.estoque_minimo) }}
+
+            <button type="submit" class="botao botao-destaque botao-largo">{{ "Salvar alterações" if produto else "Cadastrar produto" }}</button>
+        </div>
+        <div class="entrada-teclado">
+            <p class="subtitulo nota">Toque no campo de preço ou de quantidade e use o teclado:</p>
+            {{ valor.teclado() }}
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

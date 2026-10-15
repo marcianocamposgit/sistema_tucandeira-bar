@@ -24,10 +24,10 @@ Etapas concluídas:
 - ✅ Etapa 4 — Controle de caixa
 - ✅ Etapa 5 — Tela de mesas e comandas
 - ✅ Etapa 6 — Tela de pagamento
+- ✅ Etapa 7 — Produtos e estoque
 
 Próximas etapas:
 
-- Etapa 7 — Produtos e estoque
 - Etapa 8 — Relatórios
 - Etapa 9 — Acesso pela rede, PWA e teste em tablet real
 - Etapa 10 — Backup automático, executável, início com o Windows e entrega

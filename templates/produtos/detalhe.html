@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}{{ produto.nome }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">{{ produto.nome }}</h1>
+        <a href="{{ url_for('produtos.lista', categoria=produto.categoria_id) }}" class="botao botao-secundario botao-pequeno">‹ Produtos</a>
+    </div>
+    {% if not produto.ativo %}
+    <div class="mensagem mensagem-erro">Produto desativado: não aparece no cardápio.</div>
+    {% endif %}
+
+    <table class="tabela">
+        <tbody>
+            <tr><th scope="row">Categoria</th><td class="numero">{{ produto.categoria_nome }}</td></tr>
+            <tr><th scope="row">Preço</th><td class="numero">{{ produto.preco_centavos | moeda }}</td></tr>
+            <tr class="linha-saldo{% if produto.precisa_atencao %} estoque-{{ produto.situacao_estoque }}{% endif %}">
+                <th scope="row">Estoque</th>
+                <td class="numero">{{ produto.estoque }}{% if situacoes[produto.situacao_estoque] %} <small>({{ situacoes[produto.situacao_estoque] }})</small>{% endif %}</td>
+            </tr>
+            <tr><th scope="row">Estoque mínimo</th><td class="numero">{{ produto.estoque_minimo }}</td></tr>
+        </tbody>
+    </table>
+
+    <div class="grade-acoes">
+        <a href="{{ url_for('produtos.movimento', produto_id=produto.id, tipo='entrada') }}" class="botao botao-destaque">+ Entrada</a>
+        <a href="{{ url_for('produtos.movimento', produto_id=produto.id, tipo='perda') }}" class="botao">− Perda</a>
+        <a href="{{ url_for('produtos.movimento', produto_id=produto.id, tipo='ajuste') }}" class="botao">Ajuste de contagem</a>
+        <a href="{{ url_for('produtos.editar', produto_id=produto.id) }}" class="botao">Editar</a>
+        {% if produto.ativo %}
+        <form method="post" action="{{ url_for('produtos.ativar', produto_id=produto.id, acao='desativar') }}" class="form-inline"
+              data-exige-gerente="Desativar {{ produto.nome }}">
+            {{ pin.csrf() }}
+            <button type="submit" class="botao botao-perigo">Desativar</button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('produtos.ativar', produto_id=produto.id, acao='reativar') }}" class="form-inline"
+              data-exige-gerente="Reativar {{ produto.nome }}">
+            {{ pin.csrf() }}
+            <button type="submit" class="botao">Reativar</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <h2 class="secao-titulo">Histórico do estoque</h2>
+    {% if historico %}
+    <ul class="lista">
+        {% for h in historico %}
+        <li class="lista-item">
+            <div class="lista-item-info">
+                <strong>{{ h.tipo_nome }} <span class="{{ 'texto-confere' if h.quantidade > 0 else 'texto-alerta' }}">{{ "%+d" | format(h.quantidade) }}</span></strong>
+                <span>{{ h.criado_em | data_hora }} · {{ h.usuario_nome }}{% if h.autorizado_por_nome %} · autorizado por {{ h.autorizado_por_nome }}{% endif %}{% if h.descricao %} · {{ h.descricao }}{% endif %}</span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">Nenhum movimento ainda.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

@@ -26,14 +26,20 @@
         return !window.matchMedia && 'ontouchstart' in window;
     }
 
-    /* Aplica uma tecla ao texto atual, no formato "1234,56". */
-    function aplicarTecla(texto, tecla) {
+    /* Aplica uma tecla ao texto atual, no formato "1234,56" (ou "12" em quantidades). */
+    function aplicarTecla(texto, tecla, inteiro) {
         var virgula = texto.indexOf(',');
         if (tecla === 'limpar') {
             return '';
         }
         if (tecla === 'apagar') {
             return texto.slice(0, -1);
+        }
+        if (inteiro) {
+            if (tecla === ',' || texto.length >= 6) {
+                return texto;  // quantidade: sem vírgula, até 6 dígitos
+            }
+            return texto === '0' ? tecla : texto + tecla;
         }
         if (tecla === ',') {
             return virgula >= 0 ? texto : (texto || '0') + ',';
@@ -89,8 +95,8 @@
 
         var inicial = document.querySelector('.entrada-valor[data-foco]') || campos[0];
         ativar(inicial);
-        if (!toque) {
-            inicial.focus();
+        if (!toque && !document.querySelector('[autofocus]')) {
+            inicial.focus();  // se outro campo pediu o foco (ex.: nome do produto), ele fica com o foco
         }
 
         /* Cada teclado escreve no campo selecionado do próprio formulário
@@ -111,7 +117,8 @@
             todos('[data-tecla-valor]', teclado).forEach(function (botao) {
                 botao.addEventListener('click', function () {
                     var campo = campoDoTeclado(teclado);
-                    campo.value = aplicarTecla(campo.value, botao.getAttribute('data-tecla-valor'));
+                    campo.value = aplicarTecla(campo.value, botao.getAttribute('data-tecla-valor'),
+                        campo.hasAttribute('data-inteiro'));
                     if (!toque) {
                         campo.focus();  // no computador, Enter continua enviando o formulário
                     }

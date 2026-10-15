@@ -869,6 +869,12 @@ img {
     color: var(--amarelo);
 }
 
+/* Unidade depois da quantidade ("12 un."). */
+.campo-valor-unidade {
+    margin: 0 0 0 8px;
+    font-size: 20px;
+}
+
 .campo input.entrada-valor {
     -webkit-box-flex: 1;
     -webkit-flex: 1 1 auto;
@@ -1722,6 +1728,203 @@ img {
 .texto-confere {
     color: #6bdc8b;
     color: var(--confere);
+}
+
+/* === Produtos e estoque === */
+.grade-acoes-topo {
+    margin: 0;
+}
+
+.grade-acoes-topo .botao {
+    margin: 4px 0 4px 8px;
+}
+
+a.mensagem-link {
+    display: block;
+    color: #ffffff;
+    color: var(--branco);
+    text-decoration: none;
+}
+
+.filtros {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 0 -4px 12px;
+}
+
+a.aba-categoria {
+    display: inline-block;
+    line-height: 28px;
+    text-decoration: none;
+}
+
+.aba-alerta {
+    border-color: #ff6b6b;
+    border-color: var(--falta);
+}
+
+.lista-item-inativo {
+    opacity: 0.55;
+}
+
+/* Estoque que precisa de atenção: borda colorida à esquerda. */
+.estoque-abaixo_minimo {
+    border-left: 6px solid #ffcc00;
+    border-left: 6px solid var(--amarelo);
+}
+
+.estoque-zerado,
+.estoque-negativo {
+    border-left: 6px solid #ff6b6b;
+    border-left: 6px solid var(--falta);
+}
+
+tr.estoque-zerado td,
+tr.estoque-negativo td {
+    color: #ff6b6b;
+    color: var(--falta);
+}
+
+.lista-produtos .lista-item-info {
+    -webkit-flex-basis: 120px;
+    flex-basis: 120px;
+    min-width: 0;
+}
+
+.produto-estoque {
+    min-width: 96px;
+    text-align: right;
+    line-height: 1.2;
+}
+
+.produto-estoque small {
+    display: block;
+    color: #c0c0c0;
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+.produto-estoque-numero {
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-weight: normal;
+    font-size: 28px;
+}
+
+.estoque-negativo .produto-estoque-numero,
+.estoque-zerado .produto-estoque-numero,
+.produto-estoque .selo-estoque {
+    color: #ff6b6b;
+    color: var(--falta);
+}
+
+.estoque-abaixo_minimo .produto-estoque-numero,
+.estoque-abaixo_minimo .selo-estoque {
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.form-inline {
+    display: inline-block;
+    margin: 0;
+}
+
+.grade-acoes .form-inline .botao {
+    margin: 0 12px 12px 0;
+}
+
+/* Escolha por botões (categoria do produto): funciona só com CSS. */
+.opcoes-botao {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 0 -4px 18px;
+}
+
+.opcao-botao {
+    position: relative;
+    margin: 4px;
+    cursor: pointer;
+}
+
+.opcao-botao input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+}
+
+.opcao-botao span {
+    display: block;
+    min-height: 52px;
+    padding: 12px 18px;
+    border: 2px solid #ffcc00;
+    border: 2px solid var(--amarelo);
+    border-radius: 8px;
+    background: #000000;
+    background: var(--preto);
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 20px;
+}
+
+.opcao-botao input:checked + span {
+    background: #ffcc00;
+    background: var(--amarelo);
+    color: #000000;
+    color: var(--preto);
+}
+
+.opcao-botao input:focus + span {
+    text-decoration: underline;
+}
+
+/* Campo + botão na mesma linha (categorias). */
+.formulario-linha {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: end;
+    -webkit-align-items: flex-end;
+    align-items: flex-end;
+    margin-bottom: 16px;
+}
+
+.formulario-linha .campo {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 200px;
+    flex: 1 1 200px;
+    min-width: 0;
+    margin: 0 12px 0 0;
+}
+
+.formulario-linha .botao {
+    margin-top: 8px;
+}
+
+.formulario-categoria {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 260px;
+    flex: 1 1 260px;
+    margin: 4px 12px 4px 0;
+}
+
+/* Alerta de estoque na tela de mesas (só para o gerente). */
+.alerta-estoque {
+    display: block;
+    color: #ffffff;
+    color: var(--branco);
+    text-decoration: none;
 }
 
 /* Telas largas (PC): 4 produtos por linha no cardápio. */

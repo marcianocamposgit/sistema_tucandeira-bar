@@ -102,7 +102,9 @@ Tela de pagamento (`routes/pagamentos.py`, `templates/pagamentos/`, `static/js/p
 
 ---
 
-## Etapa 7 — Produtos e estoque
+## Etapa 7 — Produtos e estoque ✅ concluída
+
+Tela de produtos (`routes/produtos.py`, `templates/produtos/`), no menu inicial: lista com categoria, preço, estoque e mínimo, filtro por categoria, "Só alertas" e "Mostrar desativados", destaque para estoque abaixo do mínimo (amarelo), zerado ou negativo (vermelho). Detalhe do produto com entrada, perda, ajuste de contagem, editar e desativar/reativar, e histórico do estoque que inclui as baixas por venda (`produtos.historico_estoque`, a soma fecha com o estoque atual). Cadastro e edição com categoria em botões, preço e quantidades pelo teclado numérico da tela (campo de quantidade sem vírgula, `valor.quantidade`) e autorização do gerente na hora; perda e ajuste com motivo e gerente; entrada sem gerente. Categorias: criar, renomear, desativar (só sem produtos ativos) e reativar, com gerente. Alerta de estoque na tela de mesas só para o gerente. A comanda aberta em qualquer aparelho se recarrega sozinha quando o cardápio muda (`produtos.assinatura_cardapio` na atualização automática). Quadros de autorização cabem numa tela de 800 px de altura. 165 testes pytest. O prompt original fica abaixo como registro.
 
 > Crie routes/produtos.py e as telas usando services/produtos.py (que já existe da Etapa 2). Lista de produtos com nome, categoria, preço, estoque e mínimo, filtro por categoria e destaque para estoque baixo ou negativo; botões para novo, editar, desativar, entrada de mercadoria, perda e ajuste de contagem (perda e ajuste pedem motivo e PIN de gerente), e histórico de movimentos por produto; gerenciar categorias (criar, renomear, desativar). Cadastro e edição só para gerente (PIN na hora). Formulários adequados para toque (campos grandes, teclado numérico para preço e quantidade) e também usáveis no computador servidor. Alerta de estoque abaixo do mínimo visível na tela de mesas para o gerente.
 

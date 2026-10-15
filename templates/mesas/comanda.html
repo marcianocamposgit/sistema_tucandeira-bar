@@ -9,7 +9,8 @@
          data-endereco-lancar="{{ url_for('mesas.lancar', comanda_id=comanda.id) }}"
          data-endereco-itens="{{ url_for('mesas.comanda', comanda_id=comanda.id) }}/itens/"
          data-csrf="{{ csrf_token() }}" data-intervalo="{{ intervalo }}"
-         data-status="{{ comanda.status }}" data-identificacao="{{ comanda.identificacao }}">
+         data-status="{{ comanda.status }}" data-identificacao="{{ comanda.identificacao }}"
+         data-cardapio="{{ estado.cardapio }}">
 
     <div class="comanda-topo">
         <a href="{{ voltar }}" class="botao botao-secundario botao-pequeno">‹ Voltar</a>

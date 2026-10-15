@@ -12,6 +12,10 @@
         </a>
     </div>
     {% include "componentes/aviso_caixa.html" %}
+    {% if alertas_estoque %}
+    <a class="mensagem mensagem-erro alerta-estoque" href="{{ url_for('produtos.lista', alertas=1) }}">
+        <strong>Estoque:</strong> {{ alertas_estoque }} sem estoque, com estoque negativo ou abaixo do mínimo. Ver ›</a>
+    {% endif %}
 
     <div class="grade-mesas">
         {% for m in estado.mesas %}

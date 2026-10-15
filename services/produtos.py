@@ -8,7 +8,9 @@ Regras:
 - `produtos.estoque` é o saldo atual, atualizado na mesma transação de cada movimento.
 """
 from database import transacao
-from models import Categoria, MovimentoEstoque, Produto, de_linha
+import hashlib
+
+from models import Categoria, LinhaHistoricoEstoque, MovimentoEstoque, Produto, de_linha
 from services.comum import (
     exigir_centavos,
     exigir_inteiro,
@@ -140,6 +142,14 @@ def cardapio(conexao):
         if da_categoria:
             resultado.append((categoria, da_categoria))
     return resultado
+
+
+def assinatura_cardapio(conexao):
+    """Texto curto que muda quando o cardápio muda (produto ou categoria criado,
+    editado, desativado). A tela da comanda compara para se recarregar sozinha."""
+    partes = [f"c{c.id}:{c.nome}:{c.ordem}" for c in listar_categorias(conexao)]
+    partes += [f"p{p.id}:{p.nome}:{p.categoria_id}:{p.preco_centavos}" for p in listar_produtos(conexao)]
+    return hashlib.sha1("|".join(partes).encode("utf-8")).hexdigest()[:12]
 
 
 def listar_alertas_estoque(conexao):
@@ -305,6 +315,36 @@ def listar_movimentos(conexao, produto_id, limite=100):
         (produto_id, limite),
     ).fetchall()
     return [de_linha(MovimentoEstoque, l) for l in linhas]
+
+
+def historico_estoque(conexao, produto_id, limite=100):
+    """Movimentos de estoque e baixas por venda do produto, do mais recente ao mais antigo.
+
+    A baixa por venda não fica em movimentos_estoque (vem de itens_venda), mas
+    aparece aqui para o histórico fechar com o estoque atual.
+    """
+    linhas = []
+    for m in listar_movimentos(conexao, produto_id, limite):
+        if m.tipo == "ajuste":
+            descricao = f"Contado: {m.estoque_contado}. {m.motivo}"
+        else:
+            descricao = m.motivo or ""
+        linhas.append(LinhaHistoricoEstoque(m.criado_em, m.tipo, m.quantidade, descricao, m.usuario_nome,
+                                            m.autorizado_por_nome))
+    vendas = conexao.execute(
+        """SELECT v.criado_em, v.comanda_id, SUM(iv.quantidade) AS quantidade, u.nome AS usuario_nome
+           FROM itens_venda iv
+           JOIN vendas v ON v.id = iv.venda_id
+           JOIN usuarios u ON u.id = v.fechada_por
+           WHERE iv.produto_id = ?
+           GROUP BY v.id ORDER BY v.criado_em DESC, v.id DESC LIMIT ?""",
+        (produto_id, limite),
+    ).fetchall()
+    for v in vendas:
+        linhas.append(LinhaHistoricoEstoque(v["criado_em"], "venda", -v["quantidade"],
+                                            f"Comanda {v['comanda_id']}", v["usuario_nome"]))
+    linhas.sort(key=lambda linha: linha.criado_em, reverse=True)
+    return linhas[:limite]
 
 
 def baixar_por_venda(conexao, produto_id, quantidade, agora=None):

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titulo %}Produtos — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina pagina-larga">
+    <div class="pagina-topo">
+        <h1 class="titulo">Produtos e estoque</h1>
+        <div class="grade-acoes grade-acoes-topo">
+            <a href="{{ url_for('produtos.novo', categoria=categoria_id) }}" class="botao botao-destaque">+ Novo produto</a>
+            <a href="{{ url_for('produtos.categorias') }}" class="botao">Categorias</a>
+        </div>
+    </div>
+
+    {% if alertas_texto %}
+    <a class="mensagem mensagem-erro mensagem-link" href="{{ url_for('produtos.lista', alertas=1) }}">
+        <strong>Estoque:</strong> {{ alertas_texto }} de atenção (sem estoque, negativo ou abaixo do mínimo). Ver só esses ›</a>
+    {% endif %}
+
+    <div class="filtros" role="navigation" aria-label="Filtrar por categoria">
+        <a href="{{ url_for('produtos.lista', inativos=1 if mostrar_inativos else None) }}"
+           class="aba-categoria{% if not categoria_id and not so_alertas %} aba-ativa{% endif %}">Todos</a>
+        {% for c in categorias %}
+        <a href="{{ url_for('produtos.lista', categoria=c.id, inativos=1 if mostrar_inativos else None) }}"
+           class="aba-categoria{% if categoria_id == c.id %} aba-ativa{% endif %}">{{ c.nome }}</a>
+        {% endfor %}
+        <a href="{{ url_for('produtos.lista', alertas=1) }}"
+           class="aba-categoria aba-alerta{% if so_alertas %} aba-ativa{% endif %}">Só alertas</a>
+    </div>
+
+    {% if produtos %}
+    <ul class="lista lista-produtos">
+        {% for p in produtos %}
+        <li>
+            <a class="lista-item lista-item-link{% if not p.ativo %} lista-item-inativo{% elif p.precisa_atencao %} estoque-{{ p.situacao_estoque }}{% endif %}"
+               href="{{ url_for('produtos.detalhe', produto_id=p.id) }}">
+                <span class="lista-item-info">
+                    <strong>{{ p.nome }}{% if not p.ativo %} (desativado){% endif %}</strong>
+                    <span>{{ p.categoria_nome }} · {{ p.preco_centavos | moeda }}</span>
+                </span>
+                <span class="produto-estoque">
+                    <strong class="produto-estoque-numero">{{ p.estoque }}</strong>
+                    <small>mínimo {{ p.estoque_minimo }}</small>
+                    {% if p.ativo and situacoes[p.situacao_estoque] %}<small class="selo-estoque">{{ situacoes[p.situacao_estoque] }}</small>{% endif %}
+                </span>
+                <span class="lista-item-seta" aria-hidden="true">›</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">{{ "Nenhum produto com alerta de estoque." if so_alertas else "Nenhum produto aqui." }}</p>
+    {% endif %}
+
+    <div class="rodape-acoes">
+        {% if mostrar_inativos %}
+        <a href="{{ url_for('produtos.lista', categoria=categoria_id) }}" class="botao botao-secundario">Esconder desativados</a>
+        {% else %}
+        <a href="{{ url_for('produtos.lista', categoria=categoria_id, inativos=1) }}" class="botao botao-secundario">Mostrar desativados</a>
+        {% endif %}
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+    </div>
+</section>
+{% endblock %}

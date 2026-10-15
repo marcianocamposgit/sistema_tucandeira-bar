@@ -33,12 +33,24 @@ def ler_moeda(texto, campo="o valor"):
         limpo = limpo.replace(".", "")
     encontrado = _VALOR.match(limpo)
     if not encontrado:
-        raise DadosInvalidosError(f"Valor inválido em {campo}. Use o formato 1.234,56.")
+        raise DadosInvalidosError(f"Valor inválido para {campo}. Use o formato 1.234,56.")
     reais, centavos = encontrado.group(1), (encontrado.group(2) or "").ljust(2, "0")
     valor = int(reais) * 100 + int(centavos)
     if valor > MAXIMO_CENTAVOS:
-        raise DadosInvalidosError(f"Valor alto demais em {campo}.")
+        raise DadosInvalidosError(f"Valor alto demais para {campo}.")
     return valor
+
+
+def ler_inteiro(texto, campo="a quantidade"):
+    """Converte uma quantidade digitada ("12") em inteiro. Vazio ou com letras é erro."""
+    limpo = (texto or "").strip()
+    if not limpo:
+        raise DadosInvalidosError(f"Informe {campo}.")
+    if not re.fullmatch(r"[0-9]+", limpo):
+        raise DadosInvalidosError(f"{campo.capitalize()} deve ser um número inteiro, sem vírgula.")
+    if len(limpo) > 6:
+        raise DadosInvalidosError(f"Número alto demais para {campo}.")
+    return int(limpo)
 
 
 def formatar_moeda(centavos):

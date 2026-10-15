@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% block titulo %}{{ textos.titulo }} — {{ produto.nome }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">{{ textos.titulo }}</h1>
+        <a href="{{ url_for('produtos.detalhe', produto_id=produto.id) }}" class="botao botao-secundario botao-pequeno">‹ Voltar</a>
+    </div>
+    <p class="subtitulo"><strong>{{ produto.nome }}</strong> · estoque agora: {{ estoque_texto }}
+        {% if textos.gerente %} · pede motivo e a autorização do gerente{% endif %}</p>
+
+    <form method="post" class="entrada-com-teclado"
+          {% if textos.gerente %}data-exige-gerente="{{ textos.titulo }} — {{ produto.nome }}"{% endif %}>
+        {{ pin.csrf() }}
+        <div class="entrada-campos">
+            {{ valor.quantidade("quantidade", textos.rotulo, dados.quantidade, foco=True) }}
+            {% if tipo == "ajuste" %}
+            <p class="subtitulo nota">Digite quanto há de verdade no estoque; o sistema grava a diferença.</p>
+            {% endif %}
+            {{ valor.texto_com_atalhos("motivo", textos.motivo, dados.motivo, textos.atalhos) }}
+            <button type="submit" class="botao botao-destaque botao-largo">{{ textos.botao }}</button>
+        </div>
+        <div class="entrada-teclado">{{ valor.teclado() }}</div>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{% if textos.gerente %}{% include "componentes/autorizacao_gerente.html" %}{% endif %}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/valor.js') }}"></script>{% endblock %}

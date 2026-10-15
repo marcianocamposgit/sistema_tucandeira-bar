@@ -13,6 +13,18 @@
 </label>
 {%- endmacro %}
 
+{# Quantidade (número inteiro): mesmo teclado da tela, sem vírgula. #}
+{% macro quantidade(nome, rotulo, texto="", foco=False, unidade="un.") -%}
+<label class="campo campo-valor">
+    <span class="campo-rotulo">{{ rotulo }}</span>
+    <span class="campo-valor-caixa">
+        <input type="text" name="{{ nome }}" value="{{ texto }}" class="entrada-valor" inputmode="numeric"
+               pattern="[0-9]*" autocomplete="off" placeholder="0" maxlength="6" data-inteiro{% if foco %} data-foco{% endif %}>
+        <span class="campo-valor-rs campo-valor-unidade">{{ unidade }}</span>
+    </span>
+</label>
+{%- endmacro %}
+
 {# Teclado numérico na tela: escreve no campo de valor selecionado. #}
 {% macro teclado() -%}
 <div class="teclado teclado-valor" data-teclado-valor>

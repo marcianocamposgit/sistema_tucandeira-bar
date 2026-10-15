@@ -29,6 +29,7 @@
     var enderecoItens = tela.getAttribute('data-endereco-itens');
     var statusInicial = tela.getAttribute('data-status');
     var identificacaoInicial = tela.getAttribute('data-identificacao');
+    var cardapioInicial = tela.getAttribute('data-cardapio');
     var segundos = parseFloat(tela.getAttribute('data-intervalo')) || 5;
     var corpo = tela.querySelector('[data-corpo]');
     var areaItens = tela.querySelector('[data-itens]');
@@ -155,8 +156,9 @@
     }
 
     function desenhar(dados) {
-        if (dados.status !== statusInicial || dados.identificacao !== identificacaoInicial) {
-            // Outro aparelho pediu a conta, transferiu ou juntou mesas: recarrega os botões.
+        if (dados.status !== statusInicial || dados.identificacao !== identificacaoInicial ||
+                (dados.cardapio && dados.cardapio !== cardapioInicial)) {
+            // Outro aparelho pediu a conta, transferiu, juntou mesas ou mudou o cardápio: recarrega a tela.
             if (!quadroAberto() && !pedidosEmAndamento) {
                 window.location.reload();
             }
