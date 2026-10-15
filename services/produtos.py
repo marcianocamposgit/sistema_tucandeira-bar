@@ -18,6 +18,7 @@ from services.comum import (
     texto_opcional,
 )
 from services.erros import DadosInvalidosError, NaoEncontradoError, NomeDuplicadoError
+from services.formatacao import plural
 from services.usuarios import verificar_gerente
 
 SQL_PRODUTOS = """
@@ -91,7 +92,7 @@ def desativar_categoria(conexao, categoria_id, usuario_id, autorizacao, agora=No
                                  (categoria_id,)).fetchone()[0]
         if ativos:
             raise DadosInvalidosError(
-                f"A categoria tem {ativos} produto(s) ativo(s). Mova ou desative os produtos antes.")
+                f"A categoria tem {plural(ativos, 'produto ativo', 'produtos ativos')}. Mova ou desative os produtos antes.")
         conexao.execute("UPDATE categorias SET ativo = 0 WHERE id = ?", (categoria_id,))
         registrar_auditoria(conexao, "categoria_desativada", usuario_id, {"categoria_id": categoria_id},
                             autorizado_por=gerente.id, agora=agora)

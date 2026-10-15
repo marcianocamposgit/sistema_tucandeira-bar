@@ -74,8 +74,9 @@ class ComandaFechadaError(ErroDeNegocio):
 
 class PrazoRemocaoExpiradoError(ErroDeNegocio):
     def __init__(self, minutos):
+        from services.formatacao import plural  # aqui dentro: formatacao importa este módulo
         super().__init__(
-            f"Passou o prazo de {minutos} minuto(s) para remover este item. "
+            f"Passou o prazo de {plural(minutos, 'minuto', 'minutos')} para remover este item. "
             "Use o cancelamento (motivo e PIN do gerente)."
         )
 

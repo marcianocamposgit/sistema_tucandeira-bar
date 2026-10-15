@@ -44,6 +44,7 @@ from services.erros import (
     PrazoRemocaoExpiradoError,
     TotalAbaixoDoPagoError,
 )
+from services.formatacao import plural
 from services.usuarios import verificar_gerente
 
 MAXIMO_PESSOAS = 99
@@ -351,7 +352,7 @@ def _diminuir_item(conexao, item, quantidade, tipo, usuario_id, motivo, autoriza
     if item.quantidade == 0:
         raise DadosInvalidosError("Este item já foi retirado da comanda (talvez em outro aparelho).")
     if quantidade > item.quantidade:
-        raise DadosInvalidosError(f"O item tem só {item.quantidade} unidade(s).")
+        raise DadosInvalidosError(f"O item tem só {plural(item.quantidade, 'unidade', 'unidades')}.")
     conexao.execute("UPDATE itens_comanda SET quantidade = quantidade - ? WHERE id = ?",
                     (quantidade, item.id))
     conexao.execute(

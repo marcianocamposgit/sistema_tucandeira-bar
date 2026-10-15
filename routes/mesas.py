@@ -25,7 +25,7 @@ from services.erros import (
     NaoEncontradoError,
     PrazoRemocaoExpiradoError,
 )
-from services.formatacao import formatar_moeda, texto_itens, texto_pessoas
+from services.formatacao import formatar_moeda, plural
 
 bp = Blueprint("mesas", __name__)
 
@@ -75,7 +75,7 @@ def _mesa_json(estado):
         "status": estado.status,
         "status_nome": NOMES_STATUS[estado.status],
         "pessoas": estado.pessoas,
-        "pessoas_texto": texto_pessoas(estado.pessoas) if estado.status != "livre" else "",
+        "pessoas_texto": plural(estado.pessoas, "pessoa", "pessoas") if estado.status != "livre" else "",
         "total": formatar_moeda(estado.total_centavos) if estado.status != "livre" else "",
         "juntas": " + ".join(str(m) for m in juntas),
         "endereco": endereco,
@@ -169,9 +169,9 @@ def _estado_comanda(conexao, comanda_id):
         "identificacao": comanda.identificacao,
         "status": comanda.status,
         "pessoas": comanda.pessoas,
-        "pessoas_texto": texto_pessoas(comanda.pessoas),
+        "pessoas_texto": plural(comanda.pessoas, "pessoa", "pessoas"),
         "quantidade_itens": resumo.quantidade_itens,
-        "itens_texto": texto_itens(resumo.quantidade_itens),
+        "itens_texto": plural(resumo.quantidade_itens, "item", "itens"),
         "tem_itens": bool(grupos),
         "total": formatar_moeda(conta.total_centavos),
         "pago": formatar_moeda(conta.pago_centavos) if conta.pago_centavos else "",
@@ -220,7 +220,7 @@ def comanda(comanda_id):
         atalhos_observacao=ATALHOS_OBSERVACAO,
         atalhos_cancelamento=ATALHOS_CANCELAMENTO,
         atalhos_cancelar_comanda=ATALHOS_CANCELAR_COMANDA,
-        prazo_remocao=config.PRAZO_REMOCAO_ITEM_MINUTOS,
+        prazo_remocao=plural(config.PRAZO_REMOCAO_ITEM_MINUTOS, "minuto", "minutos"),
     )
 
 

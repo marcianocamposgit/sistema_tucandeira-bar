@@ -188,6 +188,8 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 
 - Trabalhar **uma etapa por vez** conforme o `ROTEIRO.md`. Ao terminar uma etapa, rodar **todos** os testes (`python -m pytest`) e o servidor, resumir o que mudou, entregar um roteiro curto de teste manual e aguardar confirmação antes da próxima.
 - **Testes automáticos:** manter os existentes e rodá-los ao fim de cada etapa. Daqui para frente, escrever testes automáticos **só para regras de dinheiro, estoque, caixa ou acesso simultâneo**. Telas e rotas são testadas manualmente, com um roteiro curto de teste no fim de cada etapa (passos numerados: o que tocar e o que deve aparecer).
+- **Roteiro de teste manual:** no máximo **5 itens** por etapa, só com o que os testes automáticos não cobrem: visual, fluxo na tela e atualização entre aparelhos. Regras de cálculo já testadas no pytest não entram no roteiro.
+- **Plurais:** nunca escrever "pessoa(s)", "minuto(s)" etc. Usar `plural()` de `services/formatacao.py` (também filtro Jinja `plural`): "1 pessoa", "4 pessoas".
 - Fazer commit no git ao fim de cada etapa, com mensagem em português.
 - Perguntar antes de apagar arquivos ou mudar o comportamento de alguma funcionalidade existente.
 - Nunca apagar nem recriar o banco com dados reais (`data/tucandeira.db` no desenvolvimento, `C:\TucandeiraBar\dados\tucandeira.db` no bar); alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).

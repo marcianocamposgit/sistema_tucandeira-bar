@@ -75,14 +75,12 @@ def valor_para_campo(texto):
         return texto or ""
 
 
-def texto_pessoas(quantidade):
-    """'1 pessoa', '4 pessoas'."""
-    return f"{quantidade} pessoa" if quantidade == 1 else f"{quantidade} pessoas"
+def plural(quantidade, singular, no_plural):
+    """Quantidade com a palavra certa: plural(1, "pessoa", "pessoas") → '1 pessoa'; 0 e 2+ usam o plural.
 
-
-def texto_itens(quantidade):
-    """'1 item', '3 itens'."""
-    return f"{quantidade} item" if quantidade == 1 else f"{quantidade} itens"
+    Nunca escrever "pessoa(s)": usar esta função (também é o filtro Jinja `plural`).
+    """
+    return f"{quantidade} {singular if quantidade == 1 else no_plural}"
 
 
 def formatar_data_hora(texto):

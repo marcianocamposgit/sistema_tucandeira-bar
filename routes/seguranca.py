@@ -11,6 +11,7 @@ from models import AutorizacaoGerente
 from routes.conexao import obter_conexao
 from services import usuarios
 from services.erros import NaoEncontradoError, PermissaoNegadaError
+from services.formatacao import plural
 from services.tentativas import ControleTentativas
 
 tentativas = ControleTentativas(config.TENTATIVAS_PIN, config.BLOQUEIO_PIN_SEGUNDOS)
@@ -102,7 +103,7 @@ def chaves_tentativa(usuario_id):
 
 
 def mensagem_bloqueio(segundos):
-    return f"Muitas tentativas erradas. Aguarde {segundos} segundo(s) e tente de novo."
+    return f"Muitas tentativas erradas. Aguarde {plural(segundos, "segundo", "segundos")} e tente de novo."
 
 
 # ============================================================

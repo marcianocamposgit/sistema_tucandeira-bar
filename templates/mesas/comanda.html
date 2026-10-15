@@ -70,7 +70,7 @@
         <div class="painel-comanda">
             <h2 class="secao-titulo">Comanda</h2>
             <div data-itens>{{ estado.itens_html | safe }}</div>
-            <p class="subtitulo nota">"−" tira sem PIN até {{ prazo_remocao }} minuto(s) depois de lançar; depois disso,
+            <p class="subtitulo nota">"−" tira sem PIN até {{ prazo_remocao }} depois de lançar; depois disso,
                 pede motivo e o PIN do gerente.</p>
         </div>
     </div>
@@ -109,7 +109,7 @@
 <div class="sobreposicao" id="quadro-cancelar-item" hidden>
     <div class="quadro">
         <h2 class="quadro-titulo">Cancelar item</h2>
-        <p class="quadro-texto">Passou o prazo de {{ prazo_remocao }} minuto(s): para tirar <strong data-nome-item></strong>,
+        <p class="quadro-texto">Passou o prazo de {{ prazo_remocao }}: para tirar <strong data-nome-item></strong>,
             informe o motivo e peça o PIN do gerente.</p>
         <form method="post" action="{{ url_for('mesas.cancelar_item', comanda_id=comanda.id) }}"
               data-exige-gerente="Cancelar item">
