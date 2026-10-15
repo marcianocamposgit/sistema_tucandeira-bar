@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Usuários — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">Usuários</h1>
+        <a href="{{ url_for('usuarios.novo') }}" class="botao botao-destaque">+ Novo usuário</a>
+    </div>
+    <ul class="lista">
+        {% for u in lista %}
+        <li class="lista-item{% if not u.ativo %} lista-item-inativo{% endif %}">
+            <div class="lista-item-info">
+                <strong>{{ u.nome }}</strong>
+                <span>{{ u.perfil_nome }}{% if not u.ativo %} — desativado{% endif %}</span>
+            </div>
+            <div class="lista-item-acoes">
+                <a href="{{ url_for('usuarios.editar', usuario_id=u.id) }}" class="botao botao-pequeno">Editar</a>
+                <a href="{{ url_for('usuarios.trocar_pin', usuario_id=u.id) }}" class="botao botao-pequeno">Trocar PIN</a>
+                {% if u.ativo %}
+                <form method="post" action="{{ url_for('usuarios.ativar_desativar', usuario_id=u.id, acao='desativar') }}"
+                      data-exige-gerente="Desativar {{ u.nome }}">
+                    {{ pin.csrf() }}
+                    <button type="submit" class="botao botao-pequeno botao-perigo">Desativar</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('usuarios.ativar_desativar', usuario_id=u.id, acao='reativar') }}"
+                      data-exige-gerente="Reativar {{ u.nome }}">
+                    {{ pin.csrf() }}
+                    <button type="submit" class="botao botao-pequeno">Reativar</button>
+                </form>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario">Voltar ao início</a>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

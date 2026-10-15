@@ -11,10 +11,11 @@ def app(tmp_path):
 
 
 def test_pagina_inicial(app):
-    resposta = app.test_client().get("/")
+    # Sem usuários: o início leva ao login, que leva ao primeiro acesso.
+    resposta = app.test_client().get("/", follow_redirects=True)
     assert resposta.status_code == 200
     html = resposta.get_data(as_text=True)
-    assert "Tucandeira Rock Bar" in html
+    assert "Tucandeira Rock Bar" in html and "Primeiro acesso" in html
     assert 'lang="pt-BR"' in html
     assert "/static/css/estilo.css" in html
     assert "/static/img/logo-" in html

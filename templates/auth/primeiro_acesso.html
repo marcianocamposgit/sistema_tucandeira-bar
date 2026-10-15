@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Primeiro acesso — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">Primeiro acesso</h1>
+    <p>Cadastre o <strong>gerente</strong> do sistema. Ele poderá cadastrar os outros usuários e autorizar as ações protegidas.</p>
+    <form method="post" class="formulario" data-validar-pin>
+        {{ pin.csrf() }}
+        <label class="campo">
+            <span class="campo-rotulo">Nome</span>
+            <input type="text" name="nome" value="{{ nome }}" maxlength="40" required autocomplete="off"
+                   autocapitalize="words">
+        </label>
+        {{ pin.campo_pin("pin", "PIN (4 números)") }}
+        {{ pin.campo_pin("pin_confirmacao", "Repita o PIN") }}
+        <button type="submit" class="botao botao-destaque botao-largo">Criar gerente e entrar</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{{ pin.teclado_flutuante() }}{% endblock %}

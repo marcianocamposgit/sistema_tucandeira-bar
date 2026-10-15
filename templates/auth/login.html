@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Entrar — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="login" id="login"{% if selecionado %} data-selecionado="{{ selecionado }}"{% endif %}>
+    <div data-etapa="nomes">
+        <h1 class="titulo titulo-centro">Quem está entrando?</h1>
+        <div class="grade-usuarios">
+            {% for u in usuarios_ativos %}
+            <button type="button" class="botao botao-usuario" data-usuario-id="{{ u.id }}" data-nome="{{ u.nome }}">
+                {{ u.nome }}
+                {% if u.gerente %}<small>Gerente</small>{% endif %}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="login-pin" data-etapa="pin" hidden>
+        <h1 class="titulo titulo-centro" data-nome-escolhido></h1>
+        <p class="subtitulo titulo-centro">Digite seu PIN</p>
+        {{ pin.pontos() }}
+        {{ pin.teclado() }}
+        <button type="button" class="botao botao-secundario botao-largo" data-voltar>Escolher outro nome</button>
+    </div>
+
+    <form method="post" action="{{ url_for('auth.login') }}" data-formulario-login hidden>
+        {{ pin.csrf() }}
+        <input type="hidden" name="usuario_id" value="">
+        <input type="hidden" name="pin" value="">
+    </form>
+</section>
+{% endblock %}

@@ -56,7 +56,10 @@ Antecipada da Etapa 6, para as regras ficarem prontas e testadas antes das telas
 
 ---
 
-## Etapa 3 — Login por PIN e usuários
+## Etapa 3 — Login por PIN e usuários ✅ concluída
+
+Primeiro acesso (cria o gerente), login tocando no nome + PIN no teclado da tela, bloqueio de 1 minuto após 5 PINs errados (por usuário e por aparelho), sessão que expira em 15 minutos sem uso, CSRF nos formulários, quadro "Autorização do gerente" reutilizável (`data-exige-gerente` no formulário), tela de usuários (cadastrar, editar, trocar PIN, desativar/reativar) e "Trocar meu PIN". JavaScript ES5 em `static/js/pin.js`, sem bibliotecas. O prompt original fica abaixo como registro.
+
 
 > Crie routes/auth.py e routes/usuarios.py e as telas. Primeira execução: se não houver usuários, tela para criar o gerente inicial. Tela de login: botões grandes com o nome de cada usuário ativo; ao tocar no nome, teclado numérico grande na tela (botões ≥ 48 px, sem depender de teclado físico) com os 4 dígitos mascarados. A mensagem de erro é sempre genérica ("PIN incorreto"). Sessão Flask com `SECRET_KEY` gerada na primeira execução e salva em `data/secret_key`; a sessão expira após `TEMPO_SESSAO_MINUTOS` sem uso e volta ao login. Bloqueio temporário após 5 PINs errados seguidos (por usuário e por aparelho). Decorators `@login_obrigatorio` e um componente reutilizável "Autorização do gerente" (modal em JS simples: escolher o gerente e digitar o PIN dele no teclado numérico) que envia o gerente e o PIN junto com a ação protegida — a autorização vale só para aquela ação. Proteção CSRF nos formulários. Cabeçalho do base.html com a logo, o nome do usuário logado e o botão "Trocar usuário". Tela de usuários (listar, cadastrar, editar, desativar), acessível só com PIN de gerente. Layout responsivo em retrato e paisagem. Sem testes automáticos de rotas (teste manual, conforme o CLAUDE.md).
 

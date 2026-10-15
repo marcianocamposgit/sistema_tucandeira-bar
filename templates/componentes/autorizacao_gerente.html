@@ -1,0 +1,25 @@
+{# Quadro "Autorização do gerente": escolher o gerente e digitar o PIN dele.
+   Abre ao enviar qualquer formulário com o atributo data-exige-gerente. #}
+{% import "componentes/pin.html" as pin with context %}
+{% set gerentes = gerentes_para_autorizacao() %}
+<div class="sobreposicao" id="autorizacao-gerente" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Autorização do gerente</h2>
+        <p class="quadro-texto" data-acao></p>
+        <div data-etapa="escolher">
+            <p class="quadro-texto">Qual gerente vai autorizar?</p>
+            <div class="lista-botoes">
+                {% for gerente in gerentes %}
+                <button type="button" class="botao botao-largo" data-gerente-id="{{ gerente.id }}"
+                        data-gerente-nome="{{ gerente.nome }}">{{ gerente.nome }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        <div data-etapa="pin" hidden>
+            <p class="quadro-texto">PIN de <strong data-gerente-escolhido></strong></p>
+            {{ pin.pontos() }}
+            {{ pin.teclado() }}
+        </div>
+        <button type="button" class="botao botao-secundario botao-largo" data-fechar>Cancelar</button>
+    </div>
+</div>

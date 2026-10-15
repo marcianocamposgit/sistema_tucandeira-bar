@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">{{ titulo }}</h1>
+    {% if mensagem %}<p>{{ mensagem }}</p>{% endif %}
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-largo">Voltar ao início</a>
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Trocar meu PIN — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">Trocar meu PIN</h1>
+    <form method="post" class="formulario" data-validar-pin>
+        {{ pin.csrf() }}
+        {{ pin.campo_pin("pin_atual", "PIN atual") }}
+        {{ pin.campo_pin("pin", "PIN novo") }}
+        {{ pin.campo_pin("pin_confirmacao", "Repita o PIN novo") }}
+        <button type="submit" class="botao botao-destaque botao-largo">Salvar</button>
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-largo">Voltar</a>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}{{ pin.teclado_flutuante() }}{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Usuários — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">Usuários</h1>
+    <p>Esta tela é só para gerente. Peça a um gerente para autorizar.</p>
+    <form method="post" action="{{ url_for('usuarios.acesso') }}" data-exige-gerente="Abrir a tela de usuários">
+        {{ pin.csrf() }}
+        <button type="submit" class="botao botao-destaque botao-largo">Pedir autorização do gerente</button>
+    </form>
+    <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-largo">Voltar</a>
+</section>
+{% endblock %}
+
+{% block quadros %}{% include "componentes/autorizacao_gerente.html" %}{% endblock %}

@@ -54,6 +54,12 @@ FORMAS_PAGAMENTO = {
 # === SEGURANÇA ===
 # Iterações do PBKDF2 para guardar os PINs (quanto maior, mais lento de quebrar).
 ITERACOES_PIN = 200_000
+# Bloqueio após PINs errados seguidos (por usuário e por aparelho).
+TENTATIVAS_PIN = 5
+BLOQUEIO_PIN_SEGUNDOS = 60
+# Depois que o gerente autoriza, por quanto tempo o operador pode ver a tela de usuários.
+ACESSO_TELA_USUARIOS_MINUTOS = 5
+NOME_ARQUIVO_SECRET_KEY = "secret_key"
 
 # === SESSÃO E TELAS ===
 TEMPO_SESSAO_MINUTOS = 15

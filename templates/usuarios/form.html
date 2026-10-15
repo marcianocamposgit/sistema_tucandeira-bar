@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}{{ "Editar usuário" if editando else "Novo usuário" }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="cartao cartao-estreito">
+    <h1 class="titulo">{{ "Editar " ~ editando.nome if editando else "Novo usuário" }}</h1>
+    <form method="post" class="formulario" data-validar-pin
+          data-exige-gerente="{{ 'Alterar ' ~ editando.nome if editando else 'Cadastrar usuário' }}">
+        {{ pin.csrf() }}
+        <label class="campo">
+            <span class="campo-rotulo">Nome</span>
+            <input type="text" name="nome" value="{{ dados.nome }}" maxlength="40" required autocomplete="off"
+                   autocapitalize="words">
+        </label>
+        <div class="campo">
+            <span class="campo-rotulo">Perfil</span>
+            <div class="opcoes">
+                {% for valor, nome in perfis.items() %}
+                <label class="opcao">
+                    <input type="radio" name="perfil" value="{{ valor }}"{% if dados.perfil == valor %} checked{% endif %}>
+                    <span>{{ nome }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% if not editando %}
+        {{ pin.campo_pin("pin", "PIN (4 números)") }}
+        {{ pin.campo_pin("pin_confirmacao", "Repita o PIN") }}
+        {% endif %}
+        <button type="submit" class="botao botao-destaque botao-largo">Salvar</button>
+        <a href="{{ url_for('usuarios.lista') }}" class="botao botao-secundario botao-largo">Voltar</a>
+    </form>
+</section>
+{% endblock %}
+
+{% block quadros %}
+{{ pin.teclado_flutuante() }}
+{% include "componentes/autorizacao_gerente.html" %}
+{% endblock %}

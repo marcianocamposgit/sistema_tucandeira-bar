@@ -83,7 +83,8 @@ tucandeira-bar/
 │   ├── relatorios.py
 │   └── backup.py
 ├── routes/              # blueprints Flask: recebem a requisição, chamam services, devolvem HTML/JSON
-│   ├── auth.py          # login/logout por PIN, autorização de gerente
+│   ├── seguranca.py     # sessão, expiração, CSRF, @login_obrigatorio, autorização de gerente do formulário
+│   ├── auth.py          # primeiro acesso, login (nome + PIN), trocar usuário, trocar meu PIN
 │   ├── mesas.py         # tela de mesas e comandas
 │   ├── caixa.py
 │   ├── pagamentos.py
@@ -179,6 +180,8 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - Limite de tentativas de PIN erradas: bloqueio de 1 minuto após 5 erros seguidos, contado por usuário e por aparelho (em memória; zera se o servidor reiniciar).
 - PIN guardado com hash + salt (`hashlib.pbkdf2_hmac`), nunca em texto puro.
 - Formulários com proteção CSRF (token na sessão). Toda entrada validada no servidor, nunca só no JavaScript.
+- **Tela de usuários:** gerente logado abre direto; operador abre só com autorização de um gerente, válida por `ACESSO_TELA_USUARIOS_MINUTOS` (5). Cada alteração (cadastrar, editar, trocar PIN, desativar) pede a autorização na hora, mesmo para gerente logado.
+- **Nas telas:** formulário com `data-exige-gerente="texto da ação"` abre o quadro de autorização antes de enviar; a rota lê `gerente_id` + `pin_gerente` com `autorizacao_do_formulario()`. Atualizações automáticas mandam o cabeçalho `X-Atualizacao-Automatica` para não renovar a sessão.
 
 ## Regras de trabalho
 
@@ -204,6 +207,11 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - **Número de mesas:** configurável no `config.py` (`NUM_MESAS`), padrão 8.
 - **Remover x cancelar item:** o operador pode remover um item sem PIN até 2 minutos depois de lançá-lo (prazo configurável no `config.py`). Depois disso, só por cancelamento, que exige motivo e PIN de gerente e fica registrado.
 - **Plataforma:** aplicação web na rede local (Flask + waitress), acessada por tablets e pelo computador do caixa. A versão Tkinter foi abandonada (tag `v1.0-tkinter`).
+- **Sangria:** não pode ser maior que o dinheiro que deveria estar no caixa (fundo + pagamentos em dinheiro + suprimentos − sangrias).
+- **Desativar categoria:** só se ela não tiver produtos ativos, para nenhum produto sumir do cardápio sem querer.
+- **Balcão:** não pode haver duas comandas de balcão abertas com o mesmo nome de cliente (ex.: usar "João 2").
+- **Aviso de estoque ao lançar:** considera o estoque menos o que já está lançado nas comandas abertas (o estoque só baixa no pagamento).
+- **Transferir mesa junta:** transfere só a mesa escolhida; as outras mesas continuam juntas na mesma comanda.
 
 ## Requisitos do sistema
 

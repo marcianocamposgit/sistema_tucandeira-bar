@@ -4,13 +4,15 @@ Desenvolvimento:  python app.py      (servidor do Flask, com recarga automática
 No bar:           python servidor.py (waitress, acessível pela rede local)
 """
 import os
+import secrets
+from datetime import timedelta
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, render_template
 
 import config
 from database import ambiente_do_banco, conectar, migrar
-from routes import conexao, principal
+from routes import auth, conexao, principal, seguranca, usuarios
 from services.backup import fazer_backup
 from services.formatacao import formatar_moeda
 
@@ -49,6 +51,18 @@ def preparar_dados(pasta_dados, ambiente=None, backup=True):
     return caminho_banco, caminho_backup, ambiente_atual
 
 
+def carregar_secret_key(pasta_dados):
+    """Chave que assina o cookie de sessão: gerada na primeira vez e guardada na pasta de dados."""
+    arquivo = Path(pasta_dados) / config.NOME_ARQUIVO_SECRET_KEY
+    if arquivo.exists():
+        chave = arquivo.read_text(encoding="ascii").strip()
+        if chave:
+            return chave
+    chave = secrets.token_hex(32)
+    arquivo.write_text(chave, encoding="ascii")
+    return chave
+
+
 def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extras=None):
     """Cria o app. `backup=True` só ao iniciar o servidor de verdade."""
     pasta_dados = Path(pasta_dados or config.PASTA_DADOS)
@@ -63,6 +77,10 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
         PASTA_DADOS=pasta_dados,
         CAMINHO_BANCO=caminho_banco,
         AMBIENTE=ambiente_atual,
+        SECRET_KEY=carregar_secret_key(pasta_dados),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        PERMANENT_SESSION_LIFETIME=timedelta(minutes=config.TEMPO_SESSAO_MINUTOS),
     )
     if configuracoes_extras:
         app.config.update(configuracoes_extras)
@@ -71,7 +89,26 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
     app.jinja_env.globals.update(VERSAO=config.VERSAO)
 
     conexao.registrar(app)
+    seguranca.registrar(app)
+    app.register_blueprint(auth.bp)
     app.register_blueprint(principal.bp)
+    app.register_blueprint(usuarios.bp)
+
+    @app.errorhandler(400)
+    def requisicao_invalida(erro):
+        return render_template("erro.html", titulo="Não foi possível concluir",
+                               mensagem=getattr(erro, "description", None)), 400
+
+    @app.errorhandler(404)
+    def nao_encontrado(_erro):
+        return render_template("erro.html", titulo="Página não encontrada",
+                               mensagem="O endereço digitado não existe."), 404
+
+    @app.errorhandler(500)
+    def erro_interno(_erro):
+        return render_template("erro.html", titulo="Algo deu errado",
+                               mensagem="Ocorreu um erro inesperado. Tente de novo."), 500
+
     return app
 
 
