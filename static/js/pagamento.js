@@ -58,10 +58,15 @@
             return;
         }
         var soDinheiro = formulario.querySelector('[data-so-dinheiro]');
+        var confirmar = formulario.querySelector('[data-confirmar-pagamento]');
+        var faltaForma = formulario.querySelector('[data-falta-forma]');
         function atualizar() {
             var marcada = formulario.querySelector('input[name="forma"]:checked');
             var dinheiro = !!marcada && marcada.value === 'dinheiro';
             mostrar(soDinheiro, dinheiro);
+            // A forma vem primeiro: sem ela, "Confirmar" fica desativado (o servidor também confere).
+            confirmar.disabled = !marcada;
+            mostrar(faltaForma, !marcada);
             todos('.forma-pagamento', formulario).forEach(function (rotulo) {
                 rotulo.classList.toggle('forma-escolhida', rotulo.querySelector('input').checked);
             });
@@ -70,6 +75,7 @@
             opcao.addEventListener('change', atualizar);
         });
         atualizar();
+        window.addEventListener('pageshow', atualizar);  // voltar pelo navegador reativa os botões (pin.js)
     }
 
     /* ---------- Atalhos de valor e cédulas ---------- */

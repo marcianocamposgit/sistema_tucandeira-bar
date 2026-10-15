@@ -1040,6 +1040,11 @@ img {
     font-size: 16px;
 }
 
+/* Pagamento parcial: quanto falta, em destaque. */
+.mesa-falta {
+    font-weight: bold;
+}
+
 .legenda-mesas {
     margin-top: 12px;
 }
@@ -1591,6 +1596,16 @@ img {
 .entrada-teclado-pagamento {
     width: auto;
     margin: 0;
+}
+
+/* Passos da tela de pagamento: "1. Forma de pagamento", "2. Valor a pagar". */
+.passo-pagamento,
+.pagamento-receber .campo-rotulo {
+    margin: 0 0 8px;
+    color: #ffffff;
+    color: var(--branco);
+    font-weight: bold;
+    font-size: 19px;
 }
 
 .botao-confirmar-pagamento {

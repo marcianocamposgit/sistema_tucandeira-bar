@@ -125,6 +125,11 @@ class EstadoMesa:
     pessoas: int = 0
     total_centavos: int = 0
     mesas_juntas: List[int] = field(default_factory=list)
+    pago_centavos: int = 0  # pagamentos parciais já feitos
+
+    @property
+    def saldo_centavos(self):
+        return self.total_centavos - self.pago_centavos
 
 
 @dataclass

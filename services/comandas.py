@@ -197,7 +197,8 @@ def estado_mesas(conexao):
         for mesa in comanda.mesas:
             if mesa in estados:
                 estados[mesa] = EstadoMesa(mesa, status, comanda.id, comanda.pessoas,
-                                           resumo.conta.total_centavos, list(comanda.mesas))
+                                           resumo.conta.total_centavos, list(comanda.mesas),
+                                           pago_centavos=resumo.conta.pago_centavos)
     return [estados[n] for n in sorted(estados)]
 
 

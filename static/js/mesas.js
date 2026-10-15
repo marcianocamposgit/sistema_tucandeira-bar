@@ -36,6 +36,7 @@
             elemento.setAttribute('href', mesa.endereco);
             escrever(elemento, 'status_nome', mesa.status_nome);
             escrever(elemento, 'total', mesa.total);
+            escrever(elemento, 'falta', mesa.falta);
             escrever(elemento, 'pessoas', mesa.pessoas_texto);
             escrever(elemento, 'juntas', mesa.juntas ? 'Mesas ' + mesa.juntas : '');
         }

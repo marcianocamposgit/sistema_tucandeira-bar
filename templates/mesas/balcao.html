@@ -27,7 +27,7 @@
                 <span class="lista-item-info">
                     <strong>{{ r.comanda.nome_cliente }}</strong>
                     <span>{{ "Conta pedida" if r.comanda.status == "conta_pedida" else "Aberta" }}
-                        desde {{ r.comanda.aberta_em | data_hora }} · total {{ r.conta.total_centavos | moeda }}</span>
+                        desde {{ r.comanda.aberta_em | data_hora }} · total {{ r.conta.total_centavos | moeda }}{% if r.conta.pago_centavos %} · falta {{ r.conta.saldo_centavos | moeda }}{% endif %}</span>
                 </span>
                 <span class="lista-item-seta" aria-hidden="true">›</span>
             </a>

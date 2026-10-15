@@ -77,6 +77,8 @@ def _mesa_json(estado):
         "pessoas": estado.pessoas,
         "pessoas_texto": plural(estado.pessoas, "pessoa", "pessoas") if estado.status != "livre" else "",
         "total": formatar_moeda(estado.total_centavos) if estado.status != "livre" else "",
+        # Pagamento parcial: mostra também quanto falta.
+        "falta": f"falta {formatar_moeda(estado.saldo_centavos)}" if estado.pago_centavos else "",
         "juntas": " + ".join(str(m) for m in juntas),
         "endereco": endereco,
     }

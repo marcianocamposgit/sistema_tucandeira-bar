@@ -99,6 +99,20 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
     app.register_blueprint(mesas.bp)
     app.register_blueprint(pagamentos.bp)
 
+    @app.url_defaults
+    def versao_dos_arquivos_estaticos(endpoint, valores):
+        """Acrescenta ?v=<data do arquivo> aos endereços de static/ (CSS, JS, imagens).
+
+        Depois de uma atualização do sistema, o tablet e o PC baixam o arquivo novo
+        em vez de usar o antigo guardado no cache do navegador.
+        Atenção (Etapa 9): o service worker precisa de endereço fixo, sem ?v=.
+        """
+        if endpoint == "static" and "filename" in valores and "v" not in valores:
+            try:
+                valores["v"] = int((Path(app.static_folder) / valores["filename"]).stat().st_mtime)
+            except OSError:
+                pass
+
     @app.errorhandler(400)
     def requisicao_invalida(erro):
         return render_template("erro.html", titulo="Não foi possível concluir",

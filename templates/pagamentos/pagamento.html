@@ -94,7 +94,8 @@
                 {{ pin.csrf() }}
                 <input type="hidden" name="chave" value="{{ chave }}">
                 <h2 class="secao-titulo secao-titulo-cartao">Receber</h2>
-                <div class="formas-pagamento" role="radiogroup" aria-label="Forma de pagamento">
+                <p class="passo-pagamento" id="passo-forma">1. Forma de pagamento</p>
+                <div class="formas-pagamento" role="radiogroup" aria-labelledby="passo-forma">
                     {% for codigo, nome in formas.items() %}
                     <label class="forma-pagamento">
                         <input type="radio" name="forma" value="{{ codigo }}"{% if dados.forma == codigo %} checked{% endif %}>
@@ -103,7 +104,7 @@
                     {% endfor %}
                 </div>
 
-                {{ valor.campo("valor", "Valor a pagar", dados.valor, foco=True) }}
+                {{ valor.campo("valor", "2. Valor a pagar", dados.valor, foco=True) }}
                 <div class="atalhos">
                     <button type="button" class="botao botao-pequeno botao-secundario" data-preencher="valor"
                             data-texto="{{ saldo_campo }}">Saldo inteiro {{ conta.saldo_centavos | moeda }}</button>
@@ -123,7 +124,9 @@
                     <p class="subtitulo nota">Em branco = o cliente deu o valor exato. O troco aparece ao confirmar.</p>
                 </div>
 
-                <button type="submit" class="botao botao-destaque botao-largo botao-confirmar-pagamento">Confirmar pagamento</button>
+                <p class="subtitulo nota" data-falta-forma hidden>Escolha a forma de pagamento (passo 1) para confirmar.</p>
+                <button type="submit" class="botao botao-destaque botao-largo botao-confirmar-pagamento"
+                        data-confirmar-pagamento>Confirmar pagamento</button>
                 <div class="entrada-teclado entrada-teclado-pagamento">{{ valor.teclado() }}</div>
             </form>
             {% else %}
