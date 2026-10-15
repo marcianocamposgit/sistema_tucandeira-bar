@@ -77,6 +77,7 @@ def painel():
         esperado=caixa.calcular_esperado(conexao, atual.id),
         movimentos=caixa.listar_movimentos(conexao, atual.id),
         formas=FORMAS,
+        a_receber=caixa.comandas_pendentes(conexao, atual.id),
     )
 
 

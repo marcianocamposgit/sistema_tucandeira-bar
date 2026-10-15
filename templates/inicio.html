@@ -11,6 +11,9 @@
         <span class="botao-menu botao-menu-em-breve">Relatórios<small>em breve</small></span>
         <a class="botao-menu" href="{{ url_for('usuarios.lista') }}">Usuários</a>
         <a class="botao-menu" href="{{ url_for('auth.meu_pin') }}">Trocar meu PIN</a>
+        {% if usuario.gerente %}
+        <a class="botao-menu" href="{{ url_for('pagamentos.configuracoes_bar') }}">Configurações<small>desconto</small></a>
+        {% endif %}
     </div>
     <p class="subtitulo rodape-versao">Sistema de Gestão — versão {{ versao }}</p>
 </section>

@@ -304,3 +304,75 @@ def test_dois_aparelhos_pagando_o_saldo_ao_mesmo_tempo(tmp_path, monkeypatch):
     assert con.execute("SELECT COUNT(*) FROM vendas").fetchone()[0] == 1
     assert produtos.obter_produto(con, BRAHMA).estoque == 28
     con.close()
+
+
+# ============================================================
+# ENVIO REPETIDO (toque duplo, rede instável, F5)
+# ============================================================
+def test_envio_repetido_de_pagamento_parcial_nao_cobra_duas_vezes(conexao, operador, mesa):
+    primeiro = pagamentos.registrar_pagamento(conexao, mesa.id, "pix", 2500, operador.id, chave="envio-1")
+    de_novo = pagamentos.registrar_pagamento(conexao, mesa.id, "pix", 2500, operador.id, chave="envio-1")
+    assert not primeiro.repetido and de_novo.repetido
+    assert de_novo.pagamento.id == primeiro.pagamento.id
+    assert de_novo.conta.pago_centavos == 2500 and de_novo.conta.saldo_centavos == 4900
+    # Outro envio (outra chave) com o mesmo valor é outro pagamento de verdade.
+    pagamentos.registrar_pagamento(conexao, mesa.id, "pix", 2500, operador.id, chave="envio-2")
+    assert comandas.calcular_conta(conexao, mesa.id).pago_centavos == 5000
+
+
+def test_envio_repetido_depois_de_quitar_devolve_a_venda(conexao, operador, mesa):
+    pago = pagamentos.registrar_pagamento(conexao, mesa.id, "dinheiro", 7400, operador.id,
+                                          recebido_centavos=10000, chave="quitar")
+    de_novo = pagamentos.registrar_pagamento(conexao, mesa.id, "dinheiro", 7400, operador.id,
+                                             recebido_centavos=10000, chave="quitar")
+    assert pago.quitada and de_novo.quitada and de_novo.repetido
+    assert de_novo.venda.id == pago.venda.id and de_novo.pagamento.troco_centavos == 2600
+    assert conexao.execute("SELECT COUNT(*) FROM pagamentos").fetchone()[0] == 1
+    assert produtos.obter_produto(conexao, BRAHMA).estoque == 26  # baixou uma vez só
+
+
+def test_chave_de_envio_de_outra_comanda_e_recusada(conexao, operador, mesa):
+    pagamentos.registrar_pagamento(conexao, mesa.id, "pix", 1000, operador.id, chave="envio-x")
+    outra = comandas.abrir_balcao(conexao, "Ana", operador.id)
+    comandas.lancar_item(conexao, outra.id, BRAHMA, operador.id)
+    with pytest.raises(DadosInvalidosError):
+        pagamentos.registrar_pagamento(conexao, outra.id, "pix", 800, operador.id, chave="envio-x")
+    assert comandas.calcular_conta(conexao, outra.id).pago_centavos == 0
+
+
+def test_mesmo_envio_chegando_duas_vezes_ao_mesmo_tempo(tmp_path, monkeypatch):
+    """O mesmo formulário de pagamento parcial chega duas vezes juntas: só um pagamento vale."""
+    from services import usuarios
+    monkeypatch.setattr(config, "ITERACOES_PIN", 1000)
+    caminho = tmp_path / "envio.db"
+    con = conectar(caminho)
+    migrar(con)
+    garcom = usuarios.criar_gerente_inicial(con, "Garçom", "1234")
+    caixa.abrir(con, 0, garcom.id)
+    comanda_id = comandas.abrir_mesa(con, 1, garcom.id).id
+    comandas.lancar_item(con, comanda_id, BRAHMA, garcom.id, quantidade=4)
+    con.close()
+
+    repetidos = []
+    barreira = threading.Barrier(2)
+
+    def envio():
+        c = conectar(caminho)
+        try:
+            barreira.wait()
+            repetidos.append(pagamentos.registrar_pagamento(c, comanda_id, "pix", 1000, garcom.id,
+                                                            chave="mesmo-envio").repetido)
+        finally:
+            c.close()
+
+    threads = [threading.Thread(target=envio) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert sorted(repetidos) == [False, True]
+    con = conectar(caminho)
+    assert con.execute("SELECT COUNT(*) FROM pagamentos").fetchone()[0] == 1
+    assert comandas.calcular_conta(con, comanda_id).saldo_centavos == 2200
+    con.close()

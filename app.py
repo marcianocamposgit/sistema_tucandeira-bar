@@ -12,7 +12,7 @@ from flask import Flask, render_template
 
 import config
 from database import ambiente_do_banco, conectar, migrar
-from routes import auth, caixa, conexao, mesas, principal, seguranca, usuarios
+from routes import auth, caixa, conexao, mesas, pagamentos, principal, seguranca, usuarios
 from services.backup import fazer_backup
 from services.formatacao import formatar_data_hora, formatar_moeda, plural
 
@@ -97,6 +97,7 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
     app.register_blueprint(usuarios.bp)
     app.register_blueprint(caixa.bp)
     app.register_blueprint(mesas.bp)
+    app.register_blueprint(pagamentos.bp)
 
     @app.errorhandler(400)
     def requisicao_invalida(erro):

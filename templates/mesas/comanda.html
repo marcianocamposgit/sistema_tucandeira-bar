@@ -83,7 +83,7 @@
                 Já pago <span data-campo="pago">{{ estado.pago }}</span> · falta <span data-campo="saldo">{{ estado.saldo }}</span>
             </span>
         </div>
-        <a href="{{ url_for('mesas.pagamento', comanda_id=comanda.id) }}" class="botao botao-destaque botao-fechar-conta">Fechar Conta</a>
+        <a href="{{ url_for('pagamentos.tela', comanda_id=comanda.id) }}" class="botao botao-destaque botao-fechar-conta">Fechar Conta</a>
     </div>
     <div class="toast" data-toast role="status" hidden></div>
 </section>

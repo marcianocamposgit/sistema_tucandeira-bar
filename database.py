@@ -333,9 +333,18 @@ def _migracao_2(conexao, ambiente):
     )
 
 
+def _migracao_3(conexao, ambiente):
+    """Chave de cada envio da tela de pagamento: se o mesmo formulário chegar duas vezes
+    (toque duplo, rede instável, F5), o pagamento não é lançado de novo (índice único)."""
+    conexao.execute("ALTER TABLE pagamentos ADD COLUMN chave_envio TEXT")
+    conexao.execute(
+        "CREATE UNIQUE INDEX idx_pagamentos_chave ON pagamentos(chave_envio) WHERE chave_envio IS NOT NULL"
+    )
+
+
 # Cada posição da lista leva o banco da versão N para a N+1.
 # Para mudar a estrutura no futuro, acrescente uma função no fim (nunca altere as antigas).
-MIGRACOES = [_migracao_1, _migracao_2]
+MIGRACOES = [_migracao_1, _migracao_2, _migracao_3]
 VERSAO_ESQUEMA = len(MIGRACOES)
 
 

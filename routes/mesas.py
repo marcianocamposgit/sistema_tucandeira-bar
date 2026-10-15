@@ -400,14 +400,3 @@ def cancelar_comanda(comanda_id):
     flash(f"{atual.identificacao}: comanda cancelada.", "sucesso")
     return redirect(_voltar_da_comanda(atual))
 
-
-@bp.route("/comandas/<int:comanda_id>/pagamento")
-@login_obrigatorio
-def pagamento(comanda_id):
-    """Provisório: a tela de pagamento é da Etapa 6."""
-    conexao = obter_conexao()
-    atual, voltar = _obter_comanda_ou_voltar(conexao, comanda_id)
-    if atual is None:
-        return voltar
-    return render_template("mesas/pagamento_em_breve.html", comanda=atual,
-                           conta=comandas.calcular_conta(conexao, comanda_id))

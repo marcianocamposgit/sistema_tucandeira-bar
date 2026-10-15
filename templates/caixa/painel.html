@@ -17,6 +17,26 @@
         <a href="{{ url_for('caixa.fechar') }}" class="botao botao-destaque">Fechar caixa</a>
     </div>
 
+    <h2 class="secao-titulo">Contas a receber</h2>
+    {% if a_receber %}
+    <ul class="lista">
+        {% for c in a_receber %}
+        <li>
+            <a class="lista-item lista-item-link" href="{{ url_for('pagamentos.tela', comanda_id=c.comanda_id) }}">
+                <span class="lista-item-info">
+                    <strong>{{ c.identificacao }}</strong>
+                    <span>{{ "Conta pedida" if c.status == "conta_pedida" else "Aberta" }} ·
+                        total {{ c.total_centavos | moeda }} · falta pagar {{ c.saldo_centavos | moeda }}</span>
+                </span>
+                <span class="lista-item-seta" aria-hidden="true">›</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="subtitulo">Nenhuma conta aberta.</p>
+    {% endif %}
+
     <h2 class="secao-titulo">Esperado no caixa agora</h2>
     <table class="tabela">
         <tbody>

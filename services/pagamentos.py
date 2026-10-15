@@ -19,7 +19,7 @@ from database import transacao
 from models import Desconto, ItemVenda, Pagamento, ResultadoPagamento, Venda, de_linha
 from services import comandas, configuracoes, produtos
 from services.caixa import exigir_caixa_aberto
-from services.comum import exigir_centavos, exigir_texto, registrar_auditoria, texto_data
+from services.comum import exigir_centavos, exigir_texto, registrar_auditoria, texto_data, texto_opcional
 from services.erros import (
     ComandaFechadaError,
     DadosInvalidosError,
@@ -137,17 +137,34 @@ def _resultado(conexao, comanda_id, pagamento=None, venda=None, avisos=None):
     return ResultadoPagamento(comandas.calcular_conta(conexao, comanda_id), pagamento, venda, avisos or [])
 
 
+def _repetido(conexao, comanda_id, linha):
+    """Resultado de um envio que já tinha sido lançado (nada é gravado de novo)."""
+    if linha["comanda_id"] != comanda_id:
+        raise DadosInvalidosError("Envio repetido em outra comanda. Atualize a tela.")
+    return ResultadoPagamento(comandas.calcular_conta(conexao, comanda_id), _obter_pagamento(conexao, linha["id"]),
+                              obter_venda(conexao, comanda_id), [], repetido=True)
+
+
 # ============================================================
 # PAGAMENTO
 # ============================================================
 def registrar_pagamento(conexao, comanda_id, forma, valor_centavos, usuario_id,
-                        recebido_centavos=None, agora=None):
+                        recebido_centavos=None, agora=None, chave=None):
     """Lança um pagamento (total ou parcial) na comanda.
 
     `valor_centavos` é o quanto abate do saldo. Em dinheiro, `recebido_centavos`
     é o que o cliente entregou (padrão: o próprio valor); a diferença é o troco.
     Se o saldo chegar a zero, a venda é fechada na mesma transação.
+
+    `chave` identifica o envio da tela: se o mesmo envio chegar de novo (toque
+    duplo, rede instável), devolve o pagamento já lançado sem lançar outro,
+    mesmo que a conta já tenha sido fechada por ele.
     """
+    chave = texto_opcional(chave, maximo=64)
+    if chave:
+        ja_lancado = conexao.execute("SELECT * FROM pagamentos WHERE chave_envio = ?", (chave,)).fetchone()
+        if ja_lancado is not None:
+            return _repetido(conexao, comanda_id, ja_lancado)
     if forma not in FORMAS:
         raise DadosInvalidosError("Forma de pagamento inválida.")
     exigir_centavos(valor_centavos, "o valor", permitir_zero=False)
@@ -160,6 +177,11 @@ def registrar_pagamento(conexao, comanda_id, forma, valor_centavos, usuario_id,
         recebido, troco = None, 0
 
     with transacao(conexao):
+        if chave:
+            # De novo dentro da transação: dois envios iguais ao mesmo tempo.
+            ja_lancado = conexao.execute("SELECT * FROM pagamentos WHERE chave_envio = ?", (chave,)).fetchone()
+            if ja_lancado is not None:
+                return _repetido(conexao, comanda_id, ja_lancado)
         caixa = exigir_caixa_aberto(conexao)
         comanda = comandas.obter_comanda(conexao, comanda_id)
         if not comanda.editavel:
@@ -172,9 +194,9 @@ def registrar_pagamento(conexao, comanda_id, forma, valor_centavos, usuario_id,
                 f"O valor ({formatar_moeda(valor_centavos)}) passa do saldo da conta ({formatar_moeda(saldo)}).")
         pagamento_id = conexao.execute(
             """INSERT INTO pagamentos (comanda_id, caixa_id, forma, valor_centavos, recebido_centavos,
-                                       troco_centavos, recebido_por, criado_em)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (comanda_id, caixa.id, forma, valor_centavos, recebido, troco, usuario_id, texto_data(agora)),
+                                       troco_centavos, recebido_por, criado_em, chave_envio)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (comanda_id, caixa.id, forma, valor_centavos, recebido, troco, usuario_id, texto_data(agora), chave),
         ).lastrowid
         venda, avisos = None, []
         if valor_centavos == saldo:

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block titulo %}Conta paga — {{ comanda.identificacao }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <h1 class="titulo">Conta paga — {{ comanda.identificacao }}</h1>
+    {% if venda %}
+    <p class="subtitulo">Venda concluída em {{ venda.criado_em | data_hora }} por {{ fechada_por }} · {{ pessoas_texto }}</p>
+
+    <table class="tabela">
+        <tbody>
+            {% for item in venda.itens %}
+            <tr>
+                <td>{{ item.quantidade }}× {{ item.nome_produto }}</td>
+                <td class="numero">{{ item.subtotal_centavos | moeda }}</td>
+            </tr>
+            {% endfor %}
+            {% if venda.desconto_centavos %}
+            <tr><th scope="row">Desconto</th><td class="numero">−{{ venda.desconto_centavos | moeda }}</td></tr>
+            {% endif %}
+            <tr class="linha-saldo"><th scope="row">Total</th><td class="numero">{{ venda.total_centavos | moeda }}</td></tr>
+        </tbody>
+    </table>
+
+    <h2 class="secao-titulo">Pagamentos</h2>
+    <ul class="lista">
+        {% for p in pagamentos %}
+        <li class="lista-item">
+            <div class="lista-item-info">
+                <strong>{{ p.forma_nome }} — {{ p.valor_centavos | moeda }}</strong>
+                <span>{{ p.criado_em | data_hora }} · recebido por {{ p.recebido_por_nome }}
+                    {%- if p.troco_centavos %} · troco {{ p.troco_centavos | moeda }}{% endif %}</span>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="rodape-acoes">
+        <a href="{{ voltar }}" class="botao botao-destaque botao-largo" autofocus>
+            {{ "Voltar ao balcão" if comanda.tipo == "balcao" else "Voltar às mesas" }}</a>
+    </div>
+</section>
+{% endblock %}
+

@@ -1445,6 +1445,183 @@ img {
     border-left-color: #6bdc8b;
 }
 
+/* === Tela de pagamento === */
+.pagamento-colunas {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: start;
+    -webkit-align-items: flex-start;
+    align-items: flex-start;
+    margin: 0 -8px;
+}
+
+.pagamento-conta,
+.pagamento-receber {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 340px;
+    flex: 1 1 340px;
+    min-width: 0;
+    margin: 0 8px 16px;
+}
+
+.secao-titulo-cartao {
+    margin-top: 0;
+}
+
+.conta-itens {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.conta-itens li,
+.conta-desconto {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.conta-itens li > span:first-child,
+.conta-desconto > span:first-child {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 12px;
+}
+
+.conta-itens small,
+.conta-desconto small {
+    color: #c0c0c0;
+    color: var(--cinza);
+}
+
+.conta-desconto {
+    margin: 0;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.conta-desconto .botao {
+    margin-left: 12px;
+}
+
+.tabela-conta {
+    margin-top: 12px;
+    background: transparent;
+}
+
+.linha-saldo th,
+.linha-saldo td {
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-weight: normal;
+    font-size: 26px;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.formas-pagamento {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    margin: 0 -4px 16px;
+}
+
+.forma-pagamento {
+    position: relative;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 40%;
+    flex: 1 1 40%;
+    min-height: 56px;
+    margin: 4px;
+    padding: 14px 8px;
+    border: 2px solid #ffcc00;
+    border: 2px solid var(--amarelo);
+    border-radius: 8px;
+    background: #000000;
+    background: var(--preto);
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 22px;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* O rádio fica invisível mas continua no teclado (Tab e setas). */
+.forma-pagamento input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+}
+
+.forma-escolhida {
+    background: #ffcc00;
+    background: var(--amarelo);
+    color: #000000;
+    color: var(--preto);
+}
+
+.forma-pagamento input:focus + span {
+    text-decoration: underline;
+}
+
+.entrada-teclado-pagamento {
+    width: auto;
+    margin: 0;
+}
+
+.botao-confirmar-pagamento {
+    margin: 4px 0 16px;
+}
+
+.lista-item-estornado {
+    opacity: 0.6;
+}
+
+.lista-item-estornado strong {
+    text-decoration: line-through;
+}
+
+/* Troco: grande, para o caixa ler de longe. */
+.mensagem-troco {
+    border-left-color: #6bdc8b;
+    border-left-color: var(--confere);
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: #ffcc00;
+    color: var(--amarelo);
+}
+
+.texto-confere {
+    color: #6bdc8b;
+    color: var(--confere);
+}
+
 /* Telas largas (PC): 4 produtos por linha no cardápio. */
 @media (min-width: 1100px) {
     .produto {

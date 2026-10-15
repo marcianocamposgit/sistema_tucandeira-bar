@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% import "componentes/valor.html" as valor %}
+{% block titulo %}Fechar conta — {{ comanda.identificacao }} — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina pagina-larga" id="pagamento"
+         data-endereco-estado="{{ url_for('mesas.estado_comanda', comanda_id=comanda.id) }}"
+         data-intervalo="{{ intervalo }}" data-total="{{ conta.total_centavos | moeda }}"
+         data-saldo="{{ conta.saldo_centavos | moeda }}">
+    <div class="pagina-topo">
+        <h1 class="titulo">Fechar conta — {{ comanda.identificacao }}</h1>
+        <a href="{{ url_for('mesas.comanda', comanda_id=comanda.id, aba='comanda') }}"
+           class="botao botao-secundario botao-pequeno">‹ Voltar à comanda</a>
+    </div>
+    {% include "componentes/aviso_caixa.html" %}
+    <div class="mensagem" role="status" data-conta-mudou hidden>
+        A conta mudou em outro aparelho.
+        <a href="{{ url_for('pagamentos.tela', comanda_id=comanda.id) }}" class="link">Toque aqui para atualizar.</a>
+    </div>
+
+    <div class="pagamento-colunas">
+        {# ---------- Conta: itens, descontos, totais e pagamentos ---------- #}
+        <div class="pagamento-conta">
+            <div class="cartao">
+                <h2 class="secao-titulo secao-titulo-cartao">Conta</h2>
+                {% if grupos %}
+                <ul class="conta-itens">
+                    {% for gr in grupos %}
+                    <li>
+                        <span>{{ gr.quantidade }}× {{ gr.nome_produto }}{% if gr.observacao %} <small>({{ gr.observacao }})</small>{% endif %}</span>
+                        <span class="numero">{{ gr.subtotal_centavos | moeda }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="subtitulo">Nenhum item na comanda.</p>
+                {% endif %}
+
+                {% for d in descontos %}
+                <form method="post" class="conta-desconto"
+                      action="{{ url_for('pagamentos.remover_desconto', comanda_id=comanda.id, desconto_id=d.id) }}"
+                      data-exige-gerente="Remover o desconto de {{ d.valor_centavos | moeda }}">
+                    {{ pin.csrf() }}
+                    <span>Desconto <small>({{ d.motivo }})</small></span>
+                    <span class="numero">−{{ d.valor_centavos | moeda }}</span>
+                    <button type="submit" class="botao botao-pequeno botao-secundario">Remover</button>
+                </form>
+                {% endfor %}
+
+                <table class="tabela tabela-conta">
+                    <tbody>
+                        <tr><th scope="row">Total</th><td class="numero"><strong>{{ conta.total_centavos | moeda }}</strong></td></tr>
+                        <tr><th scope="row">Já pago</th><td class="numero">{{ conta.pago_centavos | moeda }}</td></tr>
+                        <tr class="linha-saldo"><th scope="row">Falta pagar</th><td class="numero">{{ conta.saldo_centavos | moeda }}</td></tr>
+                        <tr><th scope="row">Por pessoa ({{ pessoas_texto }})</th><td class="numero">{{ conta.por_pessoa_centavos | moeda }}</td></tr>
+                    </tbody>
+                </table>
+                {% if desconto_permitido and conta.saldo_centavos > 0 %}
+                <button type="button" class="botao botao-secundario" data-abrir="quadro-desconto">Dar desconto</button>
+                {% endif %}
+            </div>
+
+            <h2 class="secao-titulo">Pagamentos</h2>
+            {% if pagamentos %}
+            <ul class="lista">
+                {% for p in pagamentos %}
+                <li class="lista-item{% if p.estornado %} lista-item-estornado{% endif %}">
+                    <div class="lista-item-info">
+                        <strong>{{ p.forma_nome }} — {{ p.valor_centavos | moeda }}{% if p.estornado %} (estornado){% endif %}</strong>
+                        <span>{{ p.criado_em | data_hora }} · recebido por {{ p.recebido_por_nome }}
+                            {%- if p.troco_centavos %} · recebeu {{ p.recebido_centavos | moeda }}, troco {{ p.troco_centavos | moeda }}{% endif %}</span>
+                        {% if p.estornado %}<span>Motivo do estorno: {{ p.motivo_estorno }}</span>{% endif %}
+                    </div>
+                    {% if not p.estornado %}
+                    <div class="lista-item-acoes">
+                        <button type="button" class="botao botao-pequeno botao-secundario" data-estornar="{{ p.id }}"
+                                data-descricao="{{ p.forma_nome }} {{ p.valor_centavos | moeda }}">Estornar</button>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="subtitulo">Nenhum pagamento ainda.</p>
+            {% endif %}
+        </div>
+
+        {# ---------- Receber um pagamento ---------- #}
+        <div class="pagamento-receber">
+            {% if conta.saldo_centavos > 0 %}
+            <form method="post" action="{{ url_for('pagamentos.receber', comanda_id=comanda.id) }}"
+                  class="cartao" data-form-receber>
+                {{ pin.csrf() }}
+                <input type="hidden" name="chave" value="{{ chave }}">
+                <h2 class="secao-titulo secao-titulo-cartao">Receber</h2>
+                <div class="formas-pagamento" role="radiogroup" aria-label="Forma de pagamento">
+                    {% for codigo, nome in formas.items() %}
+                    <label class="forma-pagamento">
+                        <input type="radio" name="forma" value="{{ codigo }}"{% if dados.forma == codigo %} checked{% endif %}>
+                        <span>{{ nome }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                {{ valor.campo("valor", "Valor a pagar", dados.valor, foco=True) }}
+                <div class="atalhos">
+                    <button type="button" class="botao botao-pequeno botao-secundario" data-preencher="valor"
+                            data-texto="{{ saldo_campo }}">Saldo inteiro {{ conta.saldo_centavos | moeda }}</button>
+                    {% if por_pessoa_campo %}
+                    <button type="button" class="botao botao-pequeno botao-secundario" data-preencher="valor"
+                            data-texto="{{ por_pessoa_campo }}">1 pessoa {{ conta.por_pessoa_centavos | moeda }}</button>
+                    {% endif %}
+                </div>
+
+                <div data-so-dinheiro{% if dados.forma != "dinheiro" %} hidden{% endif %}>
+                    {{ valor.campo("recebido", "Dinheiro recebido do cliente (para o troco)", dados.recebido) }}
+                    <div class="atalhos">
+                        {% for c in cedulas %}
+                        <button type="button" class="botao botao-pequeno botao-secundario" data-cedula="{{ c }}">+ R$ {{ c }}</button>
+                        {% endfor %}
+                    </div>
+                    <p class="subtitulo nota">Em branco = o cliente deu o valor exato. O troco aparece ao confirmar.</p>
+                </div>
+
+                <button type="submit" class="botao botao-destaque botao-largo botao-confirmar-pagamento">Confirmar pagamento</button>
+                <div class="entrada-teclado entrada-teclado-pagamento">{{ valor.teclado() }}</div>
+            </form>
+            {% else %}
+            <div class="mensagem mensagem-sucesso">Nada a receber nesta conta.</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block quadros %}
+{# ---------- Estorno: motivo + gerente ---------- #}
+<div class="sobreposicao" id="quadro-estorno" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Estornar pagamento</h2>
+        <p class="quadro-texto">Estornar <strong data-descricao-pagamento></strong>? O pagamento fica registrado como
+            estornado e deixa de contar no já pago e no caixa.</p>
+        <form method="post" action="{{ url_for('pagamentos.estornar', comanda_id=comanda.id) }}"
+              data-exige-gerente="Estornar pagamento">
+            {{ pin.csrf() }}
+            <input type="hidden" name="pagamento_id" value="">
+            {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_estorno) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Estornar</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+
+{% if desconto_permitido %}
+{# ---------- Desconto em R$: motivo + gerente ---------- #}
+<div class="sobreposicao" id="quadro-desconto" hidden>
+    <div class="quadro">
+        <h2 class="quadro-titulo">Dar desconto</h2>
+        <p class="quadro-texto">Só em R$. Não pode passar do que falta pagar ({{ conta.saldo_centavos | moeda }}).</p>
+        <form method="post" action="{{ url_for('pagamentos.desconto', comanda_id=comanda.id) }}"
+              data-exige-gerente="Desconto em {{ comanda.identificacao }}">
+            {{ pin.csrf() }}
+            {{ valor.campo("valor", "Valor do desconto", "") }}
+            {{ valor.teclado() }}
+            {{ valor.texto_com_atalhos("motivo", "Motivo", "", atalhos_desconto) }}
+            <button type="submit" class="botao botao-destaque botao-largo">Aplicar desconto</button>
+            <button type="button" class="botao botao-secundario botao-largo" data-fechar-quadro>Voltar</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% include "componentes/autorizacao_gerente.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/valor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rede.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pagamento.js') }}"></script>
+{% endblock %}

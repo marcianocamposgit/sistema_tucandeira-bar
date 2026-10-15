@@ -50,9 +50,17 @@
         return texto + tecla;
     }
 
+    /* Formulário em volta do elemento (Element.closest não existe no Chrome antigo). */
+    function formularioDe(elemento) {
+        while (elemento && elemento.tagName !== 'FORM') {
+            elemento = elemento.parentNode;
+        }
+        return elemento;
+    }
+
     function iniciarCamposValor() {
         var campos = todos('.entrada-valor');
-        var teclado = document.querySelector('[data-teclado-valor]');
+        var teclados = todos('[data-teclado-valor]');
         if (!campos.length) {
             return;
         }
@@ -85,15 +93,29 @@
             inicial.focus();
         }
 
-        if (!teclado) {
-            return;
+        /* Cada teclado escreve no campo selecionado do próprio formulário
+           (ex.: tela de pagamento e quadro de desconto, cada um com o seu). */
+        function campoDoTeclado(teclado) {
+            var formulario = formularioDe(teclado);
+            if (!formulario || formulario.contains(ativo)) {
+                return ativo;
+            }
+            var primeiro = formulario.querySelector('.entrada-valor');
+            if (primeiro) {
+                ativar(primeiro);
+            }
+            return ativo;
         }
-        todos('[data-tecla-valor]', teclado).forEach(function (botao) {
-            botao.addEventListener('click', function () {
-                ativo.value = aplicarTecla(ativo.value, botao.getAttribute('data-tecla-valor'));
-                if (!toque) {
-                    ativo.focus();  // no computador, Enter continua enviando o formulário
-                }
+
+        teclados.forEach(function (teclado) {
+            todos('[data-tecla-valor]', teclado).forEach(function (botao) {
+                botao.addEventListener('click', function () {
+                    var campo = campoDoTeclado(teclado);
+                    campo.value = aplicarTecla(campo.value, botao.getAttribute('data-tecla-valor'));
+                    if (!toque) {
+                        campo.focus();  // no computador, Enter continua enviando o formulário
+                    }
+                });
             });
         });
     }

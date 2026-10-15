@@ -74,6 +74,7 @@ class ResultadoPagamento:
     pagamento: Optional[Pagamento] = None
     venda: Optional[Venda] = None
     avisos_estoque: List[str] = field(default_factory=list)
+    repetido: bool = False  # o mesmo envio chegou de novo: nada foi lançado agora
 
     @property
     def quitada(self):
