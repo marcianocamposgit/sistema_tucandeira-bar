@@ -80,9 +80,11 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 
 ## Etapa 5 — Tela de mesas e comandas
 
-> Crie routes/mesas.py e as telas usando services/comandas.py. **Tela de mesas:** grade com `NUM_MESAS` mesas em cores diferentes para livre, ocupada e conta pedida, mostrando nº de pessoas e total parcial, e um botão Balcão / Para Viagem; atualiza sozinha a cada `INTERVALO_ATUALIZACAO_MESAS` segundos por uma rota JSON (`fetch` em JS simples), sem recarregar a página inteira. **Tela da comanda:** cardápio por categorias (abas grandes) e comanda com a lista de itens (nome, qtd, observação, subtotal); tocar no produto lança 1 unidade; botões + e − grandes por item; observação por item com atalhos ("sem gelo", "bem passado"...) além do teclado virtual; − remove sem PIN dentro do prazo de 2 minutos e, depois disso, abre o cancelamento com motivo e PIN do gerente; botões "Conta pedida", "Transferir", "Juntar mesas" e "Nº de pessoas"; total em R$ e botão "Fechar Conta" sempre visíveis (em retrato e em paisagem). Cada toque grava no banco na hora; a comanda também se atualiza sozinha para mostrar itens lançados por outro tablet. Botões ficam desativados enquanto a requisição está em andamento, para evitar lançamento duplo. **Balcão:** lista das comandas abertas pelo nome do cliente e botão para criar uma nova.
+> Crie routes/mesas.py e as telas usando services/comandas.py. **Tela de mesas:** grade com `NUM_MESAS` mesas em cores diferentes para livre, ocupada e conta pedida, mostrando nº de pessoas e total parcial, e um botão Balcão / Para Viagem; atualiza sozinha a cada `INTERVALO_ATUALIZACAO_MESAS` segundos por uma rota JSON (`fetch` em JS simples), sem recarregar a página inteira. **Tela da comanda:** cardápio por categorias (abas grandes) e comanda com a lista de itens (nome, qtd, observação, subtotal); tocar no produto lança 1 unidade; botões + e − grandes por item; observação por item com atalhos ("sem gelo", "bem passado"...) além do teclado virtual; − remove sem PIN dentro do prazo de 2 minutos e, depois disso, abre o cancelamento com motivo e PIN do gerente; botões "Conta pedida", "Transferir", "Juntar mesas" e "Nº de pessoas"; total em R$ e botão "Fechar Conta" sempre visíveis (em retrato e em paisagem). Cada toque grava no banco na hora; a comanda também se atualiza sozinha para mostrar itens lançados por outro tablet. Botões ficam desativados enquanto a requisição está em andamento, para evitar lançamento duplo. **Balcão:** lista das comandas abertas pelo nome do cliente e botão para criar uma nova. **Tudo também com mouse e teclado no PC** (plano B quando o tablet não conectar): clicar nas mesas e nos produtos, digitar nome do cliente, observação e nº de pessoas no teclado físico, Enter para confirmar, nada que dependa de toque.
 
 **Teste:** abrir duas abas (ou dois aparelhos) lado a lado: lançar itens na Mesa 2 numa delas e ver a mesa ficar ocupada e os itens aparecerem na outra em poucos segundos; fechar o navegador, reabrir e conferir a comanda; reiniciar o servidor e conferir de novo; remover um item antes de 2 minutos e tentar depois (deve pedir motivo e PIN); transferir a Mesa 2 para a Mesa 5; juntar as Mesas 3 e 4; abrir duas comandas de balcão com nomes diferentes; usar em retrato e em paisagem.
+
+**Teste no PC (mouse e teclado):** só pelo navegador do PC em `http://localhost:5000`, sem o tablet: abrir uma mesa, lançar itens clicando nos produtos, escrever uma observação e o nº de pessoas pelo teclado físico, remover um item, pedir a conta, transferir uma mesa e abrir uma comanda de balcão.
 
 ---
 
@@ -92,6 +94,8 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 
 **Teste:** `pytest` passando (testes existentes); com o desconto desligado, conferir que o botão não aparece; ligar o desconto como gerente; numa mesa de 3 pessoas com desconto, uma pessoa paga a parte dela no PIX e vai embora, outra lança mais um item, e o resto é pago em débito e dinheiro com troco; estornar um pagamento lançado errado e conferir o saldo; tentar pagar a mesma comanda em dois aparelhos ao mesmo tempo; conferir o estoque baixado, a mesa livre em todos os tablets e os valores no fechamento do caixa.
 
+**Teste no PC (mouse e teclado):** só pelo PC, receber uma conta inteira: valores digitados no teclado físico (Enter confirma), pagamento parcial em PIX e o resto em dinheiro com troco, estorno com o PIN do gerente digitado pelo teclado.
+
 ---
 
 ## Etapa 7 — Produtos e estoque
@@ -100,6 +104,8 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 
 **Teste:** cadastrar, editar e desativar um produto (o desativado some do cardápio da comanda em todos os tablets); criar uma categoria nova e ver a aba aparecer na comanda; dar entrada de 10 unidades, registrar uma perda de 2 e um ajuste de contagem, e conferir o estoque e o histórico; tentar cadastrar nome duplicado ou preço negativo e ver a mensagem de erro.
 
+**Teste no PC (mouse e teclado):** só pelo PC, cadastrar um produto digitando nome e preço no teclado físico, dar entrada de mercadoria e registrar uma perda com o PIN do gerente.
+
 ---
 
 ## Etapa 8 — Relatórios
@@ -107,6 +113,8 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 > Crie services/relatorios.py (com testes pytest só para os totais de dinheiro, estoque e caixa) e routes/relatorios.py com as telas (acesso de gerente). Relatórios por período (dia, semana, mês e intervalo personalizado com seletor de data do navegador): total vendido, número de vendas, total por forma de pagamento, total de descontos, produtos mais vendidos, cancelamentos e descontos (com responsável e motivo), produtos com estoque negativo ou abaixo do mínimo (destacados) e histórico de fechamentos de caixa com as diferenças. Botão para baixar cada relatório em CSV (separador `;` e UTF-8 com BOM para abrir certo no Excel). Tabelas legíveis no tablet (rolagem vertical, sem rolagem horizontal da página) e no computador servidor.
 
 **Teste:** `pytest` passando; conferir os números do relatório contra as vendas feitas nos testes das etapas anteriores; baixar um CSV e abri-lo no Excel com acentos corretos.
+
+**Teste no PC (mouse e teclado):** só pelo PC, escolher um intervalo de datas pelo teclado, ver os relatórios sem rolagem horizontal e baixar o CSV.
 
 ---
 
@@ -119,6 +127,8 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 > 2. **Segunda opção — navegador de quiosque:** instalar um navegador de quiosque em tela cheia (ex.: Fully Kiosk Browser, no Android) apontando para o endereço do servidor, como página inicial, sem barra de endereço. Serve também para iPad ou quando o Chrome não aceitar a flag.
 
 **Teste principal (tablet + PC na mesma comanda):** iniciar `python servidor.py` no computador do bar; acessar pelo tablet via Wi-Fi em `http://<IP>:<porta>` numa aba comum, **sem** PWA, e confirmar login, lançar item e atualização das mesas; com o tablet e o navegador do PC servidor abertos ao mesmo tempo, fazer um atendimento completo na mesma comanda (abrir a mesa no tablet, lançar itens pelo tablet e pelo PC, pedir a conta no tablet, receber um pagamento parcial no PC e outro no tablet, quitar no PC) e conferir que os dois aparelhos mostram o mesmo saldo e a mesa livre no fim; aplicar a 1ª opção (flag do Chrome) no tablet, instalar o app e abrir em tela cheia com o ícone da logo — se a flag não existir no Chrome antigo, testar a 2ª opção (navegador de quiosque); apagar a tela do tablet e confirmar que a atualização automática pausa e volta; confirmar que um aparelho fora da rede local não acessa.
+
+**Teste no PC (mouse e teclado) — plano B sem tablet:** desligar o Wi-Fi do tablet (ou do roteador) e fazer um atendimento completo só pelo PC em `http://localhost:5000`: login, abrir mesa, lançar itens, receber, fechar o caixa. Nada pode depender da rede nem da internet.
 
 **Teste opcional (celulares):** acessar por um celular, conferir a comanda em abas na tela pequena e lançar um item na mesma comanda do tablet.
 
@@ -144,6 +154,8 @@ Tela de caixa (`routes/caixa.py`, `templates/caixa/`): abrir com fundo de troco,
 > - **Aviso:** os PINs de demonstração (Gerente Demo / 1234, Ana / 1111, Bruno / 2222) nunca devem ser usados no bar.
 
 **Teste:** num computador **sem Python instalado**, instalar seguindo o README e rodar o `TucandeiraBar.exe`; conferir que o banco, os backups e a secret_key foram criados em `C:\TucandeiraBar\dados\` e nada foi gravado ao lado do executável; conferir que a janela mostra o endereço `http://<IP>:<porta>` e acessá-lo pelo tablet e por um celular; reiniciar o computador e, sem abrir nada manualmente, acessar pelo tablet; simular uma atualização trocando o `.exe` por uma versão nova seguindo o README e conferir que os dados continuam lá; conferir o backup do dia na pasta de backups; restaurar um backup numa cópia seguindo o README; atendimento completo: login, abrir o caixa, vender em duas mesas e no balcão, fechar o caixa e ver o relatório.
+
+**Teste no PC (mouse e teclado):** no computador do bar com o executável instalado e o cabo de rede/Wi-Fi desconectado, abrir `http://localhost:5000` e repetir o atendimento completo só com mouse e teclado.
 
 ---
 

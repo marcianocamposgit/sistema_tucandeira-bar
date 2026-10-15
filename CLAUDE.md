@@ -8,7 +8,7 @@ Todo o código, comentários, nomes de variáveis, mensagens ao usuário e texto
 **Uso inicial:** um tablet (garçom) e o PC servidor (caixa). Celulares talvez no futuro.
 
 - **Tablet Android antigo, reaproveitado (garçom)** — Android: a confirmar, Chrome: a confirmar. É o aparelho mais limitado e define o mínimo de compatibilidade de CSS e JavaScript.
-- **Computador servidor (caixa)** — Windows, navegador atual, com mouse e teclado.
+- **Computador servidor (caixa)** — Windows, navegador atual, com mouse e teclado. É também o **plano B**: se o tablet não conectar, o bar inteiro é operado pelo PC em `http://localhost:5000`, sem depender de Wi-Fi nem de internet.
 - **Celulares Android dos garçons (futuro, opcional)** — Chrome atualizado, telas a partir de 360 px de largura. O layout já deve funcionar neles, mas não são prioridade de teste.
 
 As proteções de acesso simultâneo que já existem continuam valendo (transações, índices únicos, conferência de comanda aberta, proteção contra pagamento duplo). **Não investir em novos cenários com muitos aparelhos**: o caso real é tablet + PC na mesma comanda.
@@ -122,6 +122,7 @@ tucandeira-bar/
 
 - Pensada para toque em tablet de 10" e em celular: botões e áreas de toque com no mínimo 48×48 px, espaçamento entre botões, fontes legíveis à distância de um braço.
 - Nada que dependa de mouse (hover, clique direito, duplo clique) ou de teclado físico. PIN e valores são digitados em teclado numérico na tela; textos curtos (nome do cliente, observação, motivo) usam o teclado virtual do aparelho ou botões de atalho.
+- **Todas as telas também com mouse e teclado no PC** (não só a do caixa): mesas, comandas, lançamento de itens, pagamento, produtos e relatórios. Campos de valor e PIN aceitam digitação pelo teclado físico, Enter envia o formulário, e nenhuma ação depende de toque (gestos de deslizar, toque longo).
 - Layout responsivo a partir de **360 px de largura** (celular) até o tablet e o computador, em retrato e paisagem (media queries), sem rolagem horizontal.
 - **Tela da comanda:** em telas largas (tablet), cardápio e comanda lado a lado; em telas pequenas (celular), cardápio e comanda em **abas** ("Cardápio" / "Comanda (n itens)"). Em qualquer tamanho, o total e o botão "Fechar Conta" ficam sempre visíveis (barra fixa no rodapé).
 - Confirmação para ações destrutivas (cancelar item, fechar caixa) e proteção contra toque duplo (botão desativado enquanto a requisição está em andamento).
@@ -191,7 +192,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - Perguntar antes de apagar arquivos ou mudar o comportamento de alguma funcionalidade existente.
 - Nunca apagar nem recriar o banco com dados reais (`data/tucandeira.db` no desenvolvimento, `C:\TucandeiraBar\dados\tucandeira.db` no bar); alterações de estrutura devem preservar os dados (migração por `PRAGMA user_version`).
 - Manter a identidade visual (fundo verde `#004d26`, botões pretos, destaque amarelo `#ffcc00`, fonte Anton local nos títulos, logo).
-- Testar cada tela no **Chrome do tablet antigo** (retrato e paisagem) e no **navegador do PC servidor** — não só no modo de dispositivo do navegador, que serve para o desenvolvimento mas não substitui o tablet real. Celular (a partir de 360 px) é teste opcional.
+- Testar cada tela no **Chrome do tablet antigo** (retrato e paisagem) e no **navegador do PC servidor** — não só no modo de dispositivo do navegador, que serve para o desenvolvimento mas não substitui o tablet real. Celular (a partir de 360 px) é teste opcional. A partir da Etapa 5, o roteiro de teste manual de cada etapa inclui o **teste no PC com mouse e teclado**: fazer as operações da etapa só pelo PC em `http://localhost:5000`, como se o tablet não tivesse conectado.
 
 ## Decisões tomadas
 

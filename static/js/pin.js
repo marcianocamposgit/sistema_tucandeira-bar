@@ -33,12 +33,16 @@
     }
 
     /* ---------- Entrada de PIN: pontos + teclado na tela ---------- */
+    var entradasPin = [];
+
     function EntradaPin(container, aoCompletar) {
         var self = this;
         this.valor = '';
         this.travado = false;
+        this.container = container;
         this.pontos = todos('.pin-pontos span', container);
         this.aoCompletar = aoCompletar;
+        entradasPin.push(this);
         todos('.tecla', container).forEach(function (botao) {
             botao.addEventListener('click', function () {
                 self.tecla(botao.getAttribute('data-tecla'));
@@ -73,6 +77,31 @@
         this.travado = false;
         pintarPontos(this.pontos, 0);
     };
+
+    /* No PC: dígitos e Backspace do teclado físico vão para o teclado de PIN visível. */
+    function iniciarTecladoFisico() {
+        document.addEventListener('keydown', function (evento) {
+            var visivel = null;
+            for (var i = entradasPin.length - 1; i >= 0; i--) {
+                if (entradasPin[i].container.offsetHeight > 0) {  // não está escondido
+                    visivel = entradasPin[i];
+                    break;
+                }
+            }
+            if (!visivel || evento.ctrlKey || evento.altKey || evento.metaKey) {
+                return;
+            }
+            var tecla = evento.key;
+            if (tecla && tecla.length === 1 && tecla >= '0' && tecla <= '9') {
+                visivel.tecla(tecla);
+            } else if (tecla === 'Backspace') {
+                visivel.tecla('apagar');
+            } else {
+                return;
+            }
+            evento.preventDefault();
+        });
+    }
 
     /* ---------- Formulários: campo oculto e botões ---------- */
     function campoOculto(formulario, nome, valor) {
@@ -313,4 +342,5 @@
     iniciarAutorizacao();
     iniciarFormularios();
     iniciarSessao();
+    iniciarTecladoFisico();
 }());

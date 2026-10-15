@@ -107,6 +107,15 @@ O navegador só oferece "Instalar app" e o modo tela cheia em conexões seguras 
 
 ## Solução de problemas
 
+### O tablet não conectou: continue pelo PC do caixa
+
+O atendimento não para. O computador servidor faz tudo sozinho, **sem Wi-Fi e sem internet**:
+
+1. No computador servidor, abra o navegador em `http://localhost:5000` (com o servidor rodando).
+2. Entre com o seu nome e PIN e use o sistema normalmente com mouse e teclado: mesas, comandas, lançamento de itens, pagamento e caixa.
+3. Nada se perde: quando o tablet voltar a conectar, ele mostra as mesas e comandas lançadas pelo PC.
+4. Com o movimento mais calmo, siga o diagnóstico abaixo para descobrir por que o tablet não conectou.
+
 ### O tablet ou o celular não abre o sistema
 
 Siga os passos na ordem; cada um elimina uma causa.
