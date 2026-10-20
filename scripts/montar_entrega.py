@@ -7,6 +7,7 @@ Cria dist/TucandeiraBar-<versão>/ e dist/TucandeiraBar-<versão>.zip com:
     INSTALAR.bat                 instala no computador do bar (pede administrador)
     ATUALIZAR.bat                troca o programa por uma versão nova (os dados ficam)
     COMECAR_BANCO_LIMPO.bat      guarda o banco da validação e começa do zero
+    DESINSTALAR.bat              remove o programa (os dados ficam, a menos que se confirme)
     scripts .ps1                 usados pelos .bat (firewall, início com o Windows...)
     modelo_cardapio.csv          planilha do cardápio para o dono preencher
     README.md e VALIDACAO.md     instruções
@@ -26,8 +27,9 @@ from services import importacao  # noqa: E402
 
 DIST = RAIZ / "dist"
 SCRIPTS = RAIZ / "scripts"
-ARQUIVOS_SCRIPTS = ["INSTALAR.bat", "ATUALIZAR.bat", "COMECAR_BANCO_LIMPO.bat", "instalar.ps1", "atualizar.ps1",
-                    "comecar_banco_limpo.ps1", "liberar_firewall.ps1", "instalar_inicializacao.ps1"]
+ARQUIVOS_SCRIPTS = ["INSTALAR.bat", "ATUALIZAR.bat", "COMECAR_BANCO_LIMPO.bat", "DESINSTALAR.bat", "instalar.ps1",
+                    "atualizar.ps1", "comecar_banco_limpo.ps1", "desinstalar.ps1", "liberar_firewall.ps1",
+                    "instalar_inicializacao.ps1"]
 
 
 def modelo_cardapio():

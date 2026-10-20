@@ -85,6 +85,7 @@ Um pen drive com a pasta **`TucandeiraBar-2.0`** (ou o arquivo `TucandeiraBar-2.
 | `INSTALAR.bat` | instala tudo no computador do bar |
 | `ATUALIZAR.bat` | troca o programa por uma versão nova, sem mexer nos dados |
 | `COMECAR_BANCO_LIMPO.bat` | guarda o banco da validação e começa do zero |
+| `DESINSTALAR.bat` | remove o programa do computador (os dados ficam) |
 | `*.ps1` | usados pelos `.bat` (firewall, início com o Windows...) |
 | `modelo_cardapio.csv` | planilha do cardápio para o dono preencher no Excel |
 | `README.md`, `VALIDACAO.md` | estas instruções e o roteiro da noite de validação |
@@ -133,6 +134,10 @@ Faça isso **uma vez só**, antes da primeira venda real. Nunca copie o banco do
 3. O script fecha o servidor, guarda o programa antigo como `TucandeiraBar.anterior.exe`, coloca o novo em `C:\TucandeiraBar\programa\` e abre de novo. **Os dados não são tocados.** Ao abrir, a versão nova faz um backup e atualiza a estrutura do banco sozinha.
 4. Confira: na tela **Sobre**, a versão nova e o último backup (de agora); abra uma mesa de teste e cancele.
 5. Se algo der errado: feche o servidor, apague o `TucandeiraBar.exe` novo, renomeie `TucandeiraBar.anterior.exe` para `TucandeiraBar.exe` e restaure o backup feito na atualização (veja "Backup e restauração").
+
+### Desinstalar
+
+Dois cliques em `DESINSTALAR.bat` (pede administrador) e digite **SIM**. Ele fecha o servidor e remove o início automático com o Windows, a regra do firewall, o atalho da Área de Trabalho e a pasta `C:\TucandeiraBar\programa\`. A pasta **`C:\TucandeiraBar\dados\`** (vendas, caixas, usuários, backups) **fica guardada**: no fim, o script explica o que há nela e só a apaga se for digitado **APAGAR**; qualquer outra resposta mantém os dados. Para reinstalar depois, basta o `INSTALAR.bat`: o programa volta a usar os mesmos dados.
 
 ### A janela do servidor
 
