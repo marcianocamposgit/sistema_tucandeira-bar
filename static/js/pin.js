@@ -1,6 +1,8 @@
 /* ============================================================
    Tucandeira Rock Bar — teclado de PIN, login, autorização do
-   gerente, proteção contra toque duplo e fim de sessão.
+   gerente, proteção contra toque duplo, fim de sessão, campo de
+   texto visível com o teclado virtual e registro do PWA.
+   (Carregado em todas as telas.)
 
    JavaScript ES5 para o Chrome antigo do tablet: sem let/const,
    arrow functions, fetch, NodeList.forEach, Element.closest.
@@ -337,10 +339,52 @@
         reiniciar();
     }
 
+    /* ---------- Campo de texto visível acima do teclado virtual ---------- */
+    function iniciarCampoVisivel() {
+        // Só em aparelhos de toque: no PC não há teclado virtual e a página não deve pular.
+        if (!('ontouchstart' in window) && !(navigator.maxTouchPoints > 0)) {
+            return;
+        }
+        document.addEventListener('focusin', function (evento) {
+            var campo = evento.target;
+            var tipo = (campo.getAttribute && campo.getAttribute('type')) || '';
+            if (!(campo.tagName === 'TEXTAREA' || (campo.tagName === 'INPUT' && tipo !== 'hidden' &&
+                    tipo !== 'radio' && tipo !== 'checkbox' && !campo.readOnly))) {
+                return;
+            }
+            // Espera o teclado abrir (a tela encolhe) e traz o campo para o meio da área visível.
+            setTimeout(function () {
+                if (document.activeElement !== campo || !campo.scrollIntoView) {
+                    return;
+                }
+                try {
+                    campo.scrollIntoView({block: 'center'});
+                } catch (erro) {
+                    campo.scrollIntoView(false);  // Chrome antigo: só aceita true/false
+                }
+            }, 350);
+        });
+    }
+
+    /* ---------- PWA (opcional) ----------
+       Só em contexto seguro (HTTPS, localhost ou o endereço liberado no
+       chrome://flags). Sem ele, ou se falhar, a página funciona igual. */
+    function registrarServiceWorker() {
+        try {
+            if (window.isSecureContext && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')['catch'](function () {});
+            }
+        } catch (erro) {
+            // Nunca quebra a página.
+        }
+    }
+
     iniciarLogin();
     iniciarCamposPin();
     iniciarAutorizacao();
     iniciarFormularios();
     iniciarSessao();
     iniciarTecladoFisico();
+    iniciarCampoVisivel();
+    registrarServiceWorker();
 }());

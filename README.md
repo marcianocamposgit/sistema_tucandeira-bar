@@ -26,10 +26,10 @@ Etapas concluídas:
 - ✅ Etapa 6 — Tela de pagamento
 - ✅ Etapa 7 — Produtos e estoque
 - ✅ Etapa 8 — Relatórios
+- ✅ Etapa 9 — Acesso pela rede, PWA e teste em tablet real (teste no tablet do bar na validação)
 
 Próximas etapas:
 
-- Etapa 9 — Acesso pela rede, PWA e teste em tablet real
 - Etapa 10 — Backup automático, executável, início com o Windows e entrega
 
 > A versão desktop antiga (Tkinter) está preservada na tag `v1.0-tkinter` e na pasta `legado_tkinter/`, apenas como referência.
@@ -126,18 +126,56 @@ Usuários de demonstração (nome / PIN): Gerente Demo / 1234, Ana / 1111, Bruno
 
 > ⚠️ **Os PINs de demonstração nunca devem ser usados no bar.** Eles estão publicados aqui e servem só para testar no computador de desenvolvimento. No bar, cada pessoa cria o seu próprio PIN.
 
+## Rede do bar
+
+O computador servidor e os tablets precisam estar na **mesma rede** (Wi-Fi do bar ou cabo no mesmo roteador). Três ajustes, feitos uma vez só:
+
+### 1. IP fixo para o computador servidor
+
+Os tablets acessam o servidor pelo IP (ex.: `http://192.168.0.10:5000`). Se o IP mudar, os tablets deixam de encontrar o sistema e a liberação do Chrome (veja "Abrir como aplicativo") precisa ser refeita. Por isso o IP do servidor precisa ser fixo.
+
+**Primeira opção: reserva de DHCP no roteador.** É a mais segura, porque o roteador nunca entrega esse IP para outro aparelho.
+
+1. No computador servidor, abra o Prompt de Comando e digite `ipconfig /all`. Na placa usada (Wi-Fi ou Ethernet), anote o **Endereço Físico** (ex.: `3C-52-82-AA-BB-CC`) e o **Endereço IPv4** (ex.: `192.168.0.10`).
+2. Entre na página do roteador (normalmente `http://192.168.0.1` ou `http://192.168.1.1`; usuário e senha ficam na etiqueta embaixo dele).
+3. Procure **DHCP** → **Reserva de endereço**, "Address Reservation", "IP estático" ou "DHCP estático". Adicione o endereço físico anotado com o IP desejado e salve.
+4. Reinicie o computador servidor e confira com `ipconfig` que o IP é o reservado.
+
+**Segunda opção: IP fixo no Windows** (se o roteador não tiver reserva):
+
+1. Configurações → Rede e Internet → (Wi-Fi ou Ethernet) → a rede conectada → **Atribuição de IP** → Editar → **Manual** → IPv4 ligado.
+2. Preencha o IP (ex.: `192.168.0.10`, fora da faixa que o roteador distribui, se souber qual é), a máscara `255.255.255.0`, o gateway (IP do roteador, ex.: `192.168.0.1`) e o DNS (o próprio IP do roteador).
+3. Salve e confira que `http://localhost:5000` e a internet continuam funcionando.
+
+### 2. Liberar a porta no Firewall do Windows (só rede privada)
+
+O script `scripts/liberar_firewall.ps1` cria **uma** regra de entrada, só para a porta do sistema (5000) e só no perfil de rede **Privada**. Redes públicas continuam bloqueadas.
+
+1. Abra o **PowerShell como administrador** (menu Iniciar → digite PowerShell → botão direito → Executar como administrador).
+2. Vá até a pasta do script e rode:
+   ```
+   powershell -ExecutionPolicy Bypass -File .\liberar_firewall.ps1
+   ```
+   (Se mudou a porta no `config.py`: `-Porta 5001`. Para remover a regra: `-Desfazer`.)
+3. O script mostra as redes do computador. A rede do bar precisa estar como **Private**. Se estiver como Public, mude em Configurações → Rede e Internet → propriedades da rede → **Rede privada** (ou com o comando que o script mostra).
+4. Na primeira vez que o servidor iniciar, o Windows pode perguntar se permite o acesso do programa à rede: marque **Redes privadas** e clique em **Permitir acesso**. Se clicar em Cancelar, o Windows cria uma regra de **bloqueio** para o programa, que vence a liberação da porta. Para desfazer, procure o programa em Painel de Controle → Firewall do Windows Defender → Permitir um aplicativo.
+
+### 3. Roteador sem isolamento de clientes
+
+Na rede usada pelos tablets (a principal, não a de visitantes), o isolamento de clientes ("AP Isolation", "Client Isolation", "Isolamento de AP") precisa estar **desligado**. Veja "Solução de problemas".
+
 ## Como acessar
 
 - **No próprio computador servidor (caixa):** abra o navegador em `http://localhost:5000`, toque (ou clique) no seu nome e digite o PIN de 4 dígitos.
 - **Nos tablets:**
   1. Conecte o tablet ao Wi-Fi do bar (a mesma rede do computador servidor).
-  2. Abra o navegador e digite o endereço mostrado no console do servidor, ex.: `http://192.168.0.10:5000`.
+  2. Abra o Chrome e digite o endereço mostrado pelo servidor ao iniciar, ex.: `http://192.168.0.10:5000`.
   3. Toque no seu nome e digite o seu PIN de 4 dígitos no teclado da tela.
   4. Pronto: o sistema funciona normalmente numa aba comum do navegador. Instalar como app é opcional.
 
 ### Abrir como aplicativo em tela cheia (opcional)
 
-O navegador só oferece "Instalar app" e o modo tela cheia em conexões seguras (HTTPS ou `localhost`). Como os tablets acessam por `http://192.168.x.x`, isso pode não aparecer. Duas formas de resolver:
+O navegador só oferece "Instalar app" e o modo tela cheia em conexões seguras (HTTPS ou `localhost`). Como os tablets acessam por `http://192.168.x.x`, isso pode não aparecer. Nada no sistema depende disso: numa aba comum tudo funciona igual. Duas formas de resolver:
 
 1. **Chrome no tablet Android (primeira opção):**
    1. Abra `chrome://flags` na barra de endereço.
@@ -164,7 +202,7 @@ Siga os passos na ordem; cada um elimina uma causa.
 1. **O servidor está rodando?** No próprio computador servidor, abra `http://localhost:5000`. Se não abrir, o problema é no servidor (veja a janela/console do servidor).
 2. **O servidor responde pelo IP da rede?** Ainda no computador servidor, abra `http://<IP-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`). Se não abrir, confira o IP com `ipconfig` e se o servidor foi iniciado com `python servidor.py` (o `app.py` só escuta em `localhost`).
 3. **Mesma rede?** O tablet precisa estar no mesmo Wi-Fi do servidor (não na rede de visitantes nem nos dados móveis). Confira também se o IP do servidor não mudou (por isso o IP fixo).
-4. **Firewall do Windows:** a porta precisa estar liberada para redes **Privadas** (script da Etapa 9) e a rede do bar precisa estar marcada como **Privada** no Windows.
+4. **Firewall do Windows:** a porta precisa estar liberada para redes **Privadas** (`scripts/liberar_firewall.ps1`, veja "Rede do bar") e a rede do bar precisa estar marcada como **Privada** no Windows. Confira também se não há uma regra de bloqueio para o programa (criada ao clicar em Cancelar no aviso do firewall).
 5. **Isolamento de clientes no roteador:** se o tablet abre a página do roteador (ex.: `http://192.168.1.1`) mas não alcança o computador servidor em nenhuma porta — mesmo com o firewall do Windows desligado —, o roteador está impedindo que os aparelhos conversem entre si. É comum em roteadores de operadora e em redes de visitantes. O nome da opção varia: "Isolamento de AP", "AP Isolation", "Client Isolation", "Isolamento de clientes", "Wireless isolation".
    - **Solução:** desligar essa opção no roteador (na rede usada pelo bar, não na de visitantes) ou usar um roteador próprio para o sistema.
    - **Teste rápido para confirmar:** ligue o **Hotspot móvel** do Windows no computador servidor (Configurações → Rede e Internet → Hotspot móvel), conecte o tablet nesse hotspot e acesse `http://<IP-do-servidor-no-hotspot>:5000` (normalmente `http://192.168.137.1:5000`). Se funcionar pelo hotspot (com o firewall do Windows ligado e a regra do sistema criada), o problema é o roteador. O hotspot serve só como teste: não é a solução definitiva para o bar.

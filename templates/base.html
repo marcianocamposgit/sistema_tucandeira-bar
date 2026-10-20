@@ -2,8 +2,12 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
     <meta name="theme-color" content="#004d26">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icones/favicon-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icones/apple-touch-icon.png') }}">
     <title>{% block titulo %}Tucandeira Rock Bar{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
 </head>

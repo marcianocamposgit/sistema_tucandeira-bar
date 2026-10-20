@@ -107,7 +107,8 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
 
         Depois de uma atualização do sistema, o tablet e o PC baixam o arquivo novo
         em vez de usar o antigo guardado no cache do navegador.
-        Atenção (Etapa 9): o service worker precisa de endereço fixo, sem ?v=.
+        O service worker e o manifest não passam por aqui: são servidos na raiz
+        (/sw.js e /manifest.webmanifest), em endereço fixo.
         """
         if endpoint == "static" and "filename" in valores and "v" not in valores:
             try:
