@@ -2111,6 +2111,12 @@ tr.estoque-negativo td {
         width: -webkit-calc(50% - 16px);
         width: calc(50% - 16px);
     }
+    /* "CONFIGURAÇÕES" cabe com folga num botão de 156 px (tela de 360 px). */
+    .botao-menu {
+        padding-right: 6px;
+        padding-left: 6px;
+        font-size: 22px;
+    }
     .cabecalho-usuario {
         width: 100%;
         margin-top: 6px;

@@ -23,6 +23,7 @@ def movimento(conexao, gerente, operador, autorizacao):
             Balcão Ana = 24,00 (débito 10 estornado, depois crédito 24);
             Mesa 2: 1 pastel cancelado; Mesa 3 cancelada inteira (1 whisky).
     Dia 15 (00:10): Mesa 2 paga no PIX (1 pastel, 7,00). Caixa fechado à 01:00 com falta de 5,00 no dinheiro.
+    Tudo conta no dia 14, o dia de operação (abertura do caixa).
     """
     configuracoes.definir_desconto_permitido(conexao, True, gerente.id, autorizacao)
     caixa.abrir(conexao, 10000, operador.id, agora=em(14, 18))
@@ -77,16 +78,17 @@ def test_periodos():
 def test_vendas_do_dia_e_formas_somam_o_total(conexao, movimento):
     dia14 = relatorios.periodo("dia", DIA_14)
     r = relatorios.resumo_vendas(conexao, dia14)
-    assert (r.numero_vendas, r.subtotal_centavos, r.desconto_centavos, r.total_centavos) == (2, 8400, 500, 7900)
+    assert (r.numero_vendas, r.subtotal_centavos, r.desconto_centavos, r.total_centavos) == (3, 9100, 500, 8600)
     # O débito estornado não conta; a soma das formas é o total vendido.
-    assert r.por_forma == {"dinheiro": 3500, "debito": 0, "credito": 2400, "pix": 2000}
+    assert r.por_forma == {"dinheiro": 3500, "debito": 0, "credito": 2400, "pix": 2700}
     assert sum(r.por_forma.values()) == r.total_centavos
-    assert r.ticket_medio_centavos == 3950
+    assert r.ticket_medio_centavos == 2866
 
 
-def test_venda_depois_da_meia_noite_fica_no_outro_dia(conexao, movimento):
+def test_venda_depois_da_meia_noite_conta_no_dia_da_abertura_do_caixa(conexao, movimento):
+    # A Mesa 2 foi paga às 00:10 do dia 15, mas o caixa abriu no dia 14.
     r15 = relatorios.resumo_vendas(conexao, relatorios.periodo("dia", DIA_15))
-    assert (r15.numero_vendas, r15.total_centavos, r15.por_forma["pix"]) == (1, 700, 700)
+    assert (r15.numero_vendas, r15.total_centavos) == (0, 0)
     juntos = relatorios.resumo_vendas(conexao, relatorios.periodo("intervalo", DIA_15, "2026-10-14", "2026-10-15"))
     assert (juntos.numero_vendas, juntos.total_centavos) == (3, 8600)
     vazio = relatorios.resumo_vendas(conexao, relatorios.periodo("dia", date(2026, 10, 13)))
@@ -100,6 +102,16 @@ def test_produtos_mais_vendidos(conexao, movimento):
         ("Brahma Lata", 4, 3200), ("Heineken Long Neck", 2, 2400), ("Porção Calabresa", 1, 2800),
         ("Pastel Carne", 1, 700)]
     # Cancelados (whisky e 1 pastel) não aparecem como vendidos.
+
+
+def test_hoje_e_a_noite_do_caixa_atual_ou_do_ultimo(conexao, operador):
+    assert relatorios.dia_de_operacao(conexao, DIA_15) == DIA_15  # nenhum caixa ainda
+    caixa.abrir(conexao, 0, operador.id, agora=em(14, 18))
+    assert relatorios.dia_de_operacao(conexao, DIA_15) == DIA_14  # caixa aberto, já depois da meia-noite
+
+
+def test_ultimo_caixa_fechado_define_o_hoje(conexao, movimento):
+    assert relatorios.dia_de_operacao(conexao, date(2026, 10, 16)) == DIA_14
 
 
 def test_cancelamentos_e_descontos_com_responsavel(conexao, movimento):
@@ -119,8 +131,8 @@ def test_cancelamentos_e_descontos_com_responsavel(conexao, movimento):
 
 
 def test_fechamento_de_caixa_com_diferencas(conexao, movimento):
-    assert relatorios.fechamentos_caixa(conexao, relatorios.periodo("dia", DIA_14)) == []  # fechou no dia 15
-    [f] = relatorios.fechamentos_caixa(conexao, relatorios.periodo("dia", DIA_15))
+    assert relatorios.fechamentos_caixa(conexao, relatorios.periodo("dia", DIA_15)) == []  # fechou no dia 15
+    [f] = relatorios.fechamentos_caixa(conexao, relatorios.periodo("dia", DIA_14))  # mas abriu no dia 14
     diferencas = {c.forma: (c.esperado_centavos, c.contado_centavos, c.diferenca_centavos) for c in f.conferencias}
     assert diferencas == {"dinheiro": (13500, 13000, -500), "debito": (0, 0, 0), "credito": (2400, 2400, 0),
                           "pix": (2700, 2700, 0)}
@@ -139,8 +151,8 @@ def test_csv_abre_certo_no_excel(conexao, movimento):
     dia14 = relatorios.periodo("dia", DIA_14)
     texto = relatorios.gerar_csv(relatorios.linhas_csv(conexao, "vendas", dia14))
     assert texto.startswith("﻿Item;Valor\r\n")
-    assert "Total vendido (R$);79,00" in texto and "Descontos (R$);5,00" in texto and "Débito (R$);0,00" in texto
-    caixas = relatorios.gerar_csv(relatorios.linhas_csv(conexao, "caixas", relatorios.periodo("dia", DIA_15)))
+    assert "Total vendido (R$);86,00" in texto and "Descontos (R$);5,00" in texto and "Débito (R$);0,00" in texto
+    caixas = relatorios.gerar_csv(relatorios.linhas_csv(conexao, "caixas", dia14))
     assert caixas.splitlines()[1].endswith(";-5,00")
     cancelados = relatorios.linhas_csv(conexao, "cancelamentos", dia14)
     assert cancelados[1][:5] == ["14/10/2026 23:50", "Item cancelado", "Mesa 2", "1× Pastel Carne", "7,00"]

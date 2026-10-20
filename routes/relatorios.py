@@ -47,13 +47,14 @@ def acesso():
 
 
 def _periodo_pedido():
-    """Período da URL; se estiver errado, avisa e mostra o dia de hoje."""
+    """Período da URL; se estiver errado, avisa e mostra o dia de operação atual."""
+    hoje = relatorios.dia_de_operacao(obter_conexao())
     try:
-        return relatorios.periodo(request.args.get("periodo", "dia"), de=request.args.get("de"),
+        return relatorios.periodo(request.args.get("periodo", "dia"), hoje, de=request.args.get("de"),
                                   ate=request.args.get("ate"))
     except ErroDeNegocio as erro:
         flash(str(erro), "erro")
-        return relatorios.periodo("dia")
+        return relatorios.periodo("dia", hoje)
 
 
 @bp.route("/")

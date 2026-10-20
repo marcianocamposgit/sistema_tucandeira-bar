@@ -2,8 +2,10 @@
 cancelamentos, descontos, estoque e fechamentos de caixa. Também gera o CSV.
 
 Regras:
-- O período é pela data da venda (dia de calendário, de 00:00 a 23:59), incluindo
-  o dia inicial e o final. Nunca é o total geral.
+- O período é por dia de operação: cada venda, cancelamento, desconto, estorno e
+  fechamento conta no dia em que o caixa dele foi aberto (uma venda à 01:00 entra
+  na noite anterior). Inclui o dia inicial e o final. Nunca é o total geral.
+- "Hoje" é a noite do caixa aberto (ou do último fechado, se não houver caixa aberto).
 - O total por forma soma os pagamentos não estornados das vendas do período;
   assim, a soma das formas é sempre igual ao total vendido.
 - Comandas abertas ou canceladas não entram nas vendas.
@@ -17,6 +19,7 @@ from datetime import date, datetime, timedelta
 import config
 from models.caixa import ConferenciaForma
 from models.relatorios import FechamentoCaixa, Ocorrencia, Periodo, ProdutoVendido, ResumoVendas
+from services import caixa as servico_caixa
 from services import comandas, produtos
 from services.erros import DadosInvalidosError, NaoEncontradoError
 
@@ -48,6 +51,14 @@ def periodo(tipo, hoje=None, de=None, ate=None):
     return Periodo(inicio, fim, tipo)
 
 
+def dia_de_operacao(conexao, hoje=None):
+    """Data de abertura do caixa aberto; sem caixa aberto, a do último fechado; sem nenhum, hoje."""
+    atual = servico_caixa.caixa_aberto(conexao) or servico_caixa.ultimo_fechado(conexao)
+    if atual is None:
+        return hoje or date.today()
+    return datetime.strptime(atual.aberto_em, "%Y-%m-%d %H:%M:%S").date()
+
+
 def _ler_data(texto, campo):
     try:
         return datetime.strptime((texto or "").strip(), FORMATO_DATA).date()
@@ -56,7 +67,7 @@ def _ler_data(texto, campo):
 
 
 def _limites(p):
-    """Início e fim (exclusivo) no formato do banco, para `criado_em >= ? AND criado_em < ?`."""
+    """Início e fim (exclusivo) no formato do banco, para `cx.aberto_em >= ? AND cx.aberto_em < ?`."""
     return f"{p.inicio:%Y-%m-%d} 00:00:00", f"{p.fim + timedelta(days=1):%Y-%m-%d} 00:00:00"
 
 
@@ -77,14 +88,16 @@ def resumo_vendas(conexao, p):
     linha = conexao.execute(
         """SELECT COUNT(*) AS numero, COALESCE(SUM(subtotal_centavos), 0) AS subtotal,
                   COALESCE(SUM(desconto_centavos), 0) AS desconto, COALESCE(SUM(total_centavos), 0) AS total
-           FROM vendas WHERE criado_em >= ? AND criado_em < ?""",
+           FROM vendas v JOIN caixas cx ON cx.id = v.caixa_id
+           WHERE cx.aberto_em >= ? AND cx.aberto_em < ?""",
         (inicio, fim),
     ).fetchone()
     por_forma = {forma: 0 for forma in FORMAS}
     for forma, valor in conexao.execute(
             """SELECT p.forma, SUM(p.valor_centavos) FROM pagamentos p
                JOIN vendas v ON v.comanda_id = p.comanda_id
-               WHERE v.criado_em >= ? AND v.criado_em < ? AND p.estornado_em IS NULL
+               JOIN caixas cx ON cx.id = v.caixa_id
+               WHERE cx.aberto_em >= ? AND cx.aberto_em < ? AND p.estornado_em IS NULL
                GROUP BY p.forma""",
             (inicio, fim)).fetchall():
         por_forma[forma] = valor
@@ -98,7 +111,8 @@ def produtos_mais_vendidos(conexao, p, limite=30):
                   (SELECT iv2.nome_produto FROM itens_venda iv2 WHERE iv2.produto_id = iv.produto_id
                    ORDER BY iv2.id DESC LIMIT 1) AS nome
            FROM itens_venda iv JOIN vendas v ON v.id = iv.venda_id
-           WHERE v.criado_em >= ? AND v.criado_em < ?
+           JOIN caixas cx ON cx.id = v.caixa_id
+           WHERE cx.aberto_em >= ? AND cx.aberto_em < ?
            GROUP BY iv.produto_id ORDER BY quantidade DESC, total DESC, nome LIMIT ?""",
         (inicio, fim, limite),
     ).fetchall()
@@ -138,9 +152,10 @@ def cancelamentos(conexao, p):
                FROM item_ajustes a
                JOIN itens_comanda i ON i.id = a.item_id
                JOIN comandas c ON c.id = i.comanda_id
+               JOIN caixas cx ON cx.id = c.caixa_id
                JOIN usuarios u ON u.id = a.usuario_id
                LEFT JOIN usuarios g ON g.id = a.autorizado_por
-               WHERE a.tipo = 'cancelamento' AND a.criado_em >= ? AND a.criado_em < ?
+               WHERE a.tipo = 'cancelamento' AND cx.aberto_em >= ? AND cx.aberto_em < ?
                ORDER BY a.criado_em, a.id""",
             (inicio, fim)).fetchall():
         valor = l["quantidade"] * l["preco_unitario_centavos"]
@@ -164,9 +179,10 @@ def cancelamentos(conexao, p):
             """SELECT p.estornado_em, p.forma, p.valor_centavos, p.motivo_estorno, p.comanda_id,
                       u.nome AS usuario_nome, g.nome AS autorizado_por_nome
                FROM pagamentos p
+               JOIN caixas cx ON cx.id = p.caixa_id
                JOIN usuarios u ON u.id = p.estornado_por
                LEFT JOIN usuarios g ON g.id = p.estorno_autorizado_por
-               WHERE p.estornado_em >= ? AND p.estornado_em < ?""",
+               WHERE p.estornado_em IS NOT NULL AND cx.aberto_em >= ? AND cx.aberto_em < ?""",
             (inicio, fim)).fetchall():
         resultado.append(Ocorrencia(l["estornado_em"], "estorno", identificar(l["comanda_id"]),
                                     f"Pagamento em {FORMAS.get(l['forma'], l['forma'])}", l["valor_centavos"],
@@ -187,9 +203,10 @@ def descontos(conexao, p):
             """SELECT d.*, c.status, u.nome AS usuario_nome, g.nome AS autorizado_por_nome
                FROM descontos d
                JOIN comandas c ON c.id = d.comanda_id
+               JOIN caixas cx ON cx.id = c.caixa_id
                JOIN usuarios u ON u.id = d.usuario_id
                JOIN usuarios g ON g.id = d.autorizado_por
-               WHERE d.criado_em >= ? AND d.criado_em < ?
+               WHERE cx.aberto_em >= ? AND cx.aberto_em < ?
                ORDER BY d.criado_em DESC, d.id DESC""",
             (inicio, fim)).fetchall()
     ]
@@ -205,14 +222,14 @@ def estoque_em_alerta(conexao):
 
 
 def fechamentos_caixa(conexao, p):
-    """Caixas fechados no período, com a conferência por forma e as diferenças."""
+    """Caixas fechados abertos no período, com a conferência por forma e as diferenças."""
     inicio, fim = _limites(p)
     caixas = conexao.execute(
         """SELECT c.id, c.aberto_em, c.fechado_em, a.nome AS aberto_por_nome, f.nome AS fechado_por_nome
            FROM caixas c
            JOIN usuarios a ON a.id = c.aberto_por
            JOIN usuarios f ON f.id = c.fechado_por
-           WHERE c.status = 'fechado' AND c.fechado_em >= ? AND c.fechado_em < ?
+           WHERE c.status = 'fechado' AND c.aberto_em >= ? AND c.aberto_em < ?
            ORDER BY c.fechado_em DESC""",
         (inicio, fim),
     ).fetchall()

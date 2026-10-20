@@ -45,7 +45,8 @@
         </label>
         <button type="submit" class="botao{% if periodo.tipo == 'intervalo' %} botao-destaque{% endif %}">Ver período</button>
     </form>
-    <p class="subtitulo periodo-escolhido">Período: <strong>{{ nome_periodo }}</strong> (pela data de cada venda)</p>
+    <p class="subtitulo periodo-escolhido">Período: <strong>{{ nome_periodo }}</strong></p>
+    <p class="subtitulo">As datas são as de abertura do caixa: tudo o que acontece numa noite, mesmo depois da meia-noite, conta no dia em que o caixa foi aberto.</p>
 
     {# ---------- Vendas ---------- #}
     <div class="secao-relatorio">

@@ -167,7 +167,7 @@ Siga os passos na ordem; cada um elimina uma causa.
 4. **Firewall do Windows:** a porta precisa estar liberada para redes **Privadas** (script da Etapa 9) e a rede do bar precisa estar marcada como **Privada** no Windows.
 5. **Isolamento de clientes no roteador:** se o tablet abre a página do roteador (ex.: `http://192.168.1.1`) mas não alcança o computador servidor em nenhuma porta — mesmo com o firewall do Windows desligado —, o roteador está impedindo que os aparelhos conversem entre si. É comum em roteadores de operadora e em redes de visitantes. O nome da opção varia: "Isolamento de AP", "AP Isolation", "Client Isolation", "Isolamento de clientes", "Wireless isolation".
    - **Solução:** desligar essa opção no roteador (na rede usada pelo bar, não na de visitantes) ou usar um roteador próprio para o sistema.
-   - **Teste rápido para confirmar:** ligue o **Hotspot móvel** do Windows no computador servidor (Configurações → Rede e Internet → Hotspot móvel), conecte o tablet nesse hotspot e acesse `http://<IP-do-servidor-no-hotspot>:5000` (normalmente `http://192.168.137.1:5000`). Se funcionar pelo hotspot, o problema é o roteador. O hotspot serve só como teste: não é a solução definitiva para o bar.
+   - **Teste rápido para confirmar:** ligue o **Hotspot móvel** do Windows no computador servidor (Configurações → Rede e Internet → Hotspot móvel), conecte o tablet nesse hotspot e acesse `http://<IP-do-servidor-no-hotspot>:5000` (normalmente `http://192.168.137.1:5000`). Se funcionar pelo hotspot (com o firewall do Windows ligado e a regra do sistema criada), o problema é o roteador. O hotspot serve só como teste: não é a solução definitiva para o bar.
 
 ## Segurança
 
