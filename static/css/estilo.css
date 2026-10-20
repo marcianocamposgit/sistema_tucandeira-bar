@@ -716,6 +716,17 @@ img {
     text-align: center;
 }
 
+/* Endereço para digitar no tablet (tela Sobre): grande, para ler de longe. */
+.endereco-destaque {
+    margin: 8px 0;
+    color: #ffcc00;
+    color: var(--amarelo);
+    font-family: "Anton", Impact, "Arial Narrow Bold", sans-serif;
+    font-family: var(--fonte-titulo);
+    font-size: 30px;
+    word-wrap: break-word;
+}
+
 /* === Páginas com lista (usuários) === */
 .pagina {
     max-width: 900px;
@@ -1713,6 +1724,69 @@ img {
 
 .lista-item-estornado strong {
     text-decoration: line-through;
+}
+
+/* === Importar cardápio === */
+.lista-ajuda {
+    margin: 0 0 16px;
+    padding-left: 22px;
+}
+
+.lista-ajuda li {
+    margin-bottom: 6px;
+}
+
+.campo-arquivo {
+    width: 100%;
+    min-height: 48px;
+    min-height: var(--toque-minimo);
+    padding: 10px;
+    border: 2px dashed #ffcc00;
+    border: 2px dashed var(--amarelo);
+    border-radius: 8px;
+    background: #003319;
+    background: var(--verde-escuro);
+    color: #ffffff;
+    color: var(--branco);
+    font-size: 18px;
+}
+
+.lista-item-erro {
+    border-left: 6px solid #ff6b6b;
+    border-left: 6px solid var(--falta);
+}
+
+.texto-erro {
+    color: #ff6b6b;
+    color: var(--falta);
+    font-weight: bold;
+}
+
+.numero-resumo-erro strong {
+    color: #ff6b6b;
+    color: var(--falta);
+}
+
+/* Caixa de marcar grande, fácil de tocar. */
+.opcao-marcar {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    min-height: 48px;
+    min-height: var(--toque-minimo);
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+.opcao-marcar input {
+    -webkit-flex-shrink: 0;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    margin: 0 12px 0 0;
 }
 
 /* Troco: grande, para o caixa ler de longe. */

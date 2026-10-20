@@ -10,3 +10,7 @@ data/*.db-shm
 data/backups/
 data/logs/
 data/secret_key
+
+# Executável e pacote de entrega (gerados por scripts/gerar_exe.ps1)
+build/
+dist/

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Importar cardápio — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">Importar cardápio</h1>
+        <a href="{{ url_for('produtos.lista') }}" class="botao botao-secundario botao-pequeno">‹ Voltar</a>
+    </div>
+
+    {% if conferencia is none %}
+    {# ---------- Passo 1: modelo e envio ---------- #}
+    <div class="cartao">
+        <h2 class="secao-titulo secao-titulo-cartao">1. Baixe o modelo</h2>
+        <p>A planilha vem com o cardápio de agora. Abra no Excel, mude o que precisar e salve no mesmo formato (CSV).</p>
+        <ul class="lista-ajuda">
+            <li><strong>Categoria</strong> e <strong>Produto</strong>: o produto é reconhecido pelo nome. Nome novo = produto novo; categoria nova é criada.</li>
+            <li><strong>Preço</strong>: como 12,50.</li>
+            <li><strong>Estoque</strong>: deixe em branco para não mexer. Preencha só nos produtos novos ou para corrigir a contagem.</li>
+            <li><strong>Estoque mínimo</strong>: quando o estoque ficar abaixo dele, o sistema avisa. Em branco = não mexe (0 nos novos).</li>
+            <li>Produtos que não estão na planilha continuam como estão (na conferência dá para escolher desativá-los).</li>
+        </ul>
+        <a href="{{ url_for('produtos.modelo_planilha') }}" class="botao">Baixar modelo (cardápio atual)</a>
+    </div>
+
+    <form method="post" action="{{ url_for('produtos.conferir_planilha') }}" enctype="multipart/form-data" class="cartao">
+        {{ pin.csrf() }}
+        <h2 class="secao-titulo secao-titulo-cartao">2. Envie a planilha preenchida</h2>
+        <label class="campo">
+            <span class="campo-rotulo">Arquivo .csv</span>
+            <input type="file" name="planilha" accept=".csv,text/csv" class="campo-arquivo" required>
+        </label>
+        <p class="subtitulo nota">Nada é gravado agora: primeiro o sistema mostra o que vai mudar, linha a linha.</p>
+        <button type="submit" class="botao botao-destaque botao-largo">Conferir planilha</button>
+    </form>
+
+    {% else %}
+    {# ---------- Passo 2: conferência ---------- #}
+    <p class="subtitulo">Planilha{% if nome_arquivo %} <strong>{{ nome_arquivo }}</strong>{% endif %}: confira antes de gravar.</p>
+
+    {% for erro in conferencia.erros_gerais %}
+    <div class="mensagem mensagem-erro">{{ erro }}</div>
+    {% endfor %}
+
+    {% if not conferencia.erros_gerais %}
+    <div class="numeros-resumo">
+        <div class="numero-resumo"><span>Novos</span><strong>{{ conferencia.novos }}</strong></div>
+        <div class="numero-resumo"><span>Alterados</span><strong>{{ conferencia.alterados }}</strong></div>
+        <div class="numero-resumo"><span>Sem mudança</span><strong>{{ conferencia.iguais }}</strong></div>
+        <div class="numero-resumo{% if conferencia.com_erro %} numero-resumo-erro{% endif %}"><span>Com erro</span><strong>{{ conferencia.com_erro }}</strong></div>
+    </div>
+
+    {% if conferencia.com_erro %}
+    <div class="mensagem mensagem-erro">
+        {{ conferencia.com_erro | plural("linha tem erro", "linhas têm erro") }} (em vermelho abaixo). Corrija na planilha, salve e envie de novo — nada foi gravado.
+    </div>
+    {% endif %}
+    {% if conferencia.categorias_novas %}
+    <p><strong>Categorias novas:</strong> {{ conferencia.categorias_novas | join(", ") }}</p>
+    {% endif %}
+    {% if conferencia.categorias_reativadas %}
+    <p><strong>Categorias que voltam ao cardápio:</strong> {{ conferencia.categorias_reativadas | join(", ") }}</p>
+    {% endif %}
+
+    <ul class="lista">
+        {% for linha in conferencia.linhas if linha.acao != "igual" %}
+        <li class="lista-item{% if linha.acao == 'erro' %} lista-item-erro{% endif %}">
+            <div class="lista-item-info">
+                <strong>Linha {{ linha.numero }} · {{ linha.produto or "(sem nome)" }}{% if linha.acao == "erro" %} — erro{% elif linha.acao == "novo" %} — novo{% endif %}</strong>
+                {% for erro in linha.erros %}<span class="texto-erro">{{ erro }}</span>{% endfor %}
+                {% for mudanca in linha.mudancas %}<span>{{ mudanca }}</span>{% endfor %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if conferencia.iguais %}
+    <p class="subtitulo nota">{{ conferencia.iguais | plural("produto da planilha já está igual", "produtos da planilha já estão iguais") }} ao cardápio.</p>
+    {% endif %}
+    {% endif %}
+
+    {% if not conferencia.tem_erros %}
+    <form method="post" action="{{ url_for('produtos.gravar_planilha') }}" class="cartao"
+          data-exige-gerente="Importar o cardápio da planilha">
+        {{ pin.csrf() }}
+        <input type="hidden" name="nome_arquivo" value="{{ nome_arquivo }}">
+        <textarea name="texto" hidden>{{ texto }}</textarea>
+        {% if conferencia.ausentes %}
+        <label class="opcao-marcar">
+            <input type="checkbox" name="desativar_ausentes" value="1">
+            <span>Desativar {{ conferencia.ausentes | length | plural("produto que não está", "produtos que não estão") }} na planilha:
+                {{ conferencia.ausentes | join(", ") }}</span>
+        </label>
+        {% endif %}
+        {% if conferencia.tem_mudancas or conferencia.ausentes %}
+        <p class="subtitulo nota">Preço novo vale para os próximos lançamentos; o que já está nas comandas abertas não muda.</p>
+        <button type="submit" class="botao botao-destaque botao-largo">Gravar no cardápio</button>
+        {% else %}
+        <p>O cardápio já está igual à planilha: não há nada para gravar.</p>
+        {% endif %}
+    </form>
+    {% endif %}
+
+    <a href="{{ url_for('produtos.importar') }}" class="botao botao-secundario botao-largo">Enviar outra planilha</a>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block quadros %}{% if conferencia and not conferencia.tem_erros %}{% include "componentes/autorizacao_gerente.html" %}{% endif %}{% endblock %}

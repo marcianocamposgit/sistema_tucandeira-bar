@@ -18,6 +18,7 @@ else:
 PASTA_TEMPLATES = PASTA_PROGRAMA / "templates"
 PASTA_STATIC = PASTA_PROGRAMA / "static"
 PASTA_ASSETS = PASTA_PROGRAMA / "assets"
+ICONE_PROGRAMA = PASTA_ASSETS / "tucandeira.ico"
 
 # Pasta de dados (banco, backups, secret_key, logs), sempre separada do programa.
 PASTA_DADOS_DESENVOLVIMENTO = Path(__file__).resolve().parent / "data"
@@ -36,6 +37,7 @@ def pasta_dados_padrao():
 PASTA_DADOS = pasta_dados_padrao()
 NOME_BANCO = "tucandeira.db"
 NOME_PASTA_BACKUPS = "backups"
+NOME_PASTA_LOGS = "logs"
 
 # === SERVIDOR ===
 HOST = "0.0.0.0"
@@ -69,6 +71,14 @@ INTERVALO_ATUALIZACAO_MESAS = 5  # segundos
 
 # === BACKUP ===
 BACKUPS_MANTIDOS = 7
+VERIFICAR_BACKUP_DIARIO_MINUTOS = 30  # de quanto em quanto tempo o servidor confere se já passou um dia
+
+# === LOG DO SERVIDOR (pasta logs/ dentro da pasta de dados) ===
+LOG_TAMANHO_MAXIMO = 1024 * 1024  # 1 MB por arquivo
+LOG_ARQUIVOS_ANTIGOS = 5          # servidor.log.1 ... servidor.log.5
+
+# === JANELA DO SERVIDOR ===
+ABRIR_NAVEGADOR_AO_INICIAR = True  # abre http://localhost:PORTA neste computador ao iniciar
 
 # === VERSÃO ===
-VERSAO = "2.0-dev"
+VERSAO = "2.0"

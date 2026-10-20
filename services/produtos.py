@@ -61,15 +61,20 @@ def _validar_nome_categoria(conexao, nome, ignorar_id=None):
     return nome
 
 
+def _inserir_categoria(conexao, nome, usuario_id, gerente_id, agora):
+    """Cria a categoria (no fim da ordem das abas). Chamar dentro de uma transação."""
+    nome = _validar_nome_categoria(conexao, nome)
+    ordem = conexao.execute("SELECT COALESCE(MAX(ordem), 0) + 1 FROM categorias").fetchone()[0]
+    novo_id = conexao.execute("INSERT INTO categorias (nome, ordem) VALUES (?, ?)", (nome, ordem)).lastrowid
+    registrar_auditoria(conexao, "categoria_criada", usuario_id, {"categoria_id": novo_id, "nome": nome},
+                        autorizado_por=gerente_id, agora=agora)
+    return novo_id
+
+
 def criar_categoria(conexao, nome, usuario_id, autorizacao, agora=None):
     with transacao(conexao):
         gerente = verificar_gerente(conexao, autorizacao)
-        nome = _validar_nome_categoria(conexao, nome)
-        ordem = conexao.execute("SELECT COALESCE(MAX(ordem), 0) + 1 FROM categorias").fetchone()[0]
-        novo_id = conexao.execute("INSERT INTO categorias (nome, ordem) VALUES (?, ?)",
-                                  (nome, ordem)).lastrowid
-        registrar_auditoria(conexao, "categoria_criada", usuario_id, {"categoria_id": novo_id, "nome": nome},
-                            autorizado_por=gerente.id, agora=agora)
+        novo_id = _inserir_categoria(conexao, nome, usuario_id, gerente.id, agora)
     return obter_categoria(conexao, novo_id)
 
 
@@ -101,13 +106,18 @@ def desativar_categoria(conexao, categoria_id, usuario_id, autorizacao, agora=No
     return obter_categoria(conexao, categoria_id)
 
 
+def _reativar_categoria(conexao, categoria_id, usuario_id, gerente_id, agora):
+    """Chamar dentro de uma transação."""
+    obter_categoria(conexao, categoria_id)
+    conexao.execute("UPDATE categorias SET ativo = 1 WHERE id = ?", (categoria_id,))
+    registrar_auditoria(conexao, "categoria_reativada", usuario_id, {"categoria_id": categoria_id},
+                        autorizado_por=gerente_id, agora=agora)
+
+
 def reativar_categoria(conexao, categoria_id, usuario_id, autorizacao, agora=None):
     with transacao(conexao):
         gerente = verificar_gerente(conexao, autorizacao)
-        obter_categoria(conexao, categoria_id)
-        conexao.execute("UPDATE categorias SET ativo = 1 WHERE id = ?", (categoria_id,))
-        registrar_auditoria(conexao, "categoria_reativada", usuario_id, {"categoria_id": categoria_id},
-                            autorizado_por=gerente.id, agora=agora)
+        _reativar_categoria(conexao, categoria_id, usuario_id, gerente.id, agora)
     return obter_categoria(conexao, categoria_id)
 
 
@@ -175,77 +185,97 @@ def _validar_categoria_ativa(conexao, categoria_id):
 def cadastrar_produto(conexao, nome, categoria_id, preco_centavos, usuario_id, autorizacao,
                       estoque_inicial=0, estoque_minimo=0, agora=None):
     """Cadastra um produto. O estoque inicial entra como movimento de entrada."""
+    with transacao(conexao):
+        gerente = verificar_gerente(conexao, autorizacao)
+        novo_id = _inserir_produto(conexao, nome, categoria_id, preco_centavos, estoque_inicial, estoque_minimo,
+                                   usuario_id, gerente.id, agora)
+    return obter_produto(conexao, novo_id)
+
+
+def _inserir_produto(conexao, nome, categoria_id, preco_centavos, estoque_inicial, estoque_minimo,
+                     usuario_id, gerente_id, agora):
+    """Valida e grava o produto novo. Chamar dentro de uma transação."""
     exigir_centavos(preco_centavos, "o preço")
     exigir_inteiro(estoque_inicial, "o estoque inicial", minimo=0)
     exigir_inteiro(estoque_minimo, "o estoque mínimo", minimo=0)
     momento = texto_data(agora)
-    with transacao(conexao):
-        gerente = verificar_gerente(conexao, autorizacao)
-        nome = _validar_nome_produto(conexao, nome)
-        _validar_categoria_ativa(conexao, categoria_id)
-        novo_id = conexao.execute(
-            """INSERT INTO produtos (nome, categoria_id, preco_centavos, estoque, estoque_minimo,
-                                     criado_em, atualizado_em)
-               VALUES (?, ?, ?, 0, ?, ?, ?)""",
-            (nome, categoria_id, preco_centavos, estoque_minimo, momento, momento),
-        ).lastrowid
-        if estoque_inicial:
-            _inserir_movimento(conexao, novo_id, "entrada", estoque_inicial, usuario_id,
-                               motivo="Estoque inicial", agora=agora)
-        registrar_auditoria(conexao, "produto_criado", usuario_id,
-                            {"produto_id": novo_id, "nome": nome, "preco_centavos": preco_centavos},
-                            autorizado_por=gerente.id, agora=agora)
-    return obter_produto(conexao, novo_id)
+    nome = _validar_nome_produto(conexao, nome)
+    _validar_categoria_ativa(conexao, categoria_id)
+    novo_id = conexao.execute(
+        """INSERT INTO produtos (nome, categoria_id, preco_centavos, estoque, estoque_minimo,
+                                 criado_em, atualizado_em)
+           VALUES (?, ?, ?, 0, ?, ?, ?)""",
+        (nome, categoria_id, preco_centavos, estoque_minimo, momento, momento),
+    ).lastrowid
+    if estoque_inicial:
+        _inserir_movimento(conexao, novo_id, "entrada", estoque_inicial, usuario_id,
+                           motivo="Estoque inicial", agora=agora)
+    registrar_auditoria(conexao, "produto_criado", usuario_id,
+                        {"produto_id": novo_id, "nome": nome, "preco_centavos": preco_centavos},
+                        autorizado_por=gerente_id, agora=agora)
+    return novo_id
 
 
 def editar_produto(conexao, produto_id, nome, categoria_id, preco_centavos, estoque_minimo,
                    usuario_id, autorizacao, agora=None):
     """Edita dados do produto. O estoque só muda por movimentos (entrada, perda, ajuste)."""
-    exigir_centavos(preco_centavos, "o preço")
-    exigir_inteiro(estoque_minimo, "o estoque mínimo", minimo=0)
     with transacao(conexao):
         gerente = verificar_gerente(conexao, autorizacao)
-        atual = obter_produto(conexao, produto_id)
-        nome = _validar_nome_produto(conexao, nome, ignorar_id=produto_id)
-        if categoria_id != atual.categoria_id:
-            _validar_categoria_ativa(conexao, categoria_id)
-        conexao.execute(
-            """UPDATE produtos SET nome = ?, categoria_id = ?, preco_centavos = ?, estoque_minimo = ?,
-                                   atualizado_em = ?
-               WHERE id = ?""",
-            (nome, categoria_id, preco_centavos, estoque_minimo, texto_data(agora), produto_id),
-        )
-        registrar_auditoria(
-            conexao, "produto_editado", usuario_id,
-            {"produto_id": produto_id,
-             "antes": {"nome": atual.nome, "categoria_id": atual.categoria_id,
-                       "preco_centavos": atual.preco_centavos, "estoque_minimo": atual.estoque_minimo},
-             "depois": {"nome": nome, "categoria_id": categoria_id,
-                        "preco_centavos": preco_centavos, "estoque_minimo": estoque_minimo}},
-            autorizado_por=gerente.id, agora=agora)
+        _atualizar_produto(conexao, produto_id, nome, categoria_id, preco_centavos, estoque_minimo,
+                           usuario_id, gerente.id, agora)
     return obter_produto(conexao, produto_id)
 
 
-def _alterar_ativo(conexao, produto_id, ativo, acao, usuario_id, autorizacao, agora):
+def _atualizar_produto(conexao, produto_id, nome, categoria_id, preco_centavos, estoque_minimo,
+                       usuario_id, gerente_id, agora):
+    """Valida e grava a edição. Chamar dentro de uma transação."""
+    exigir_centavos(preco_centavos, "o preço")
+    exigir_inteiro(estoque_minimo, "o estoque mínimo", minimo=0)
+    atual = obter_produto(conexao, produto_id)
+    nome = _validar_nome_produto(conexao, nome, ignorar_id=produto_id)
+    if categoria_id != atual.categoria_id:
+        _validar_categoria_ativa(conexao, categoria_id)
+    conexao.execute(
+        """UPDATE produtos SET nome = ?, categoria_id = ?, preco_centavos = ?, estoque_minimo = ?,
+                               atualizado_em = ?
+           WHERE id = ?""",
+        (nome, categoria_id, preco_centavos, estoque_minimo, texto_data(agora), produto_id),
+    )
+    registrar_auditoria(
+        conexao, "produto_editado", usuario_id,
+        {"produto_id": produto_id,
+         "antes": {"nome": atual.nome, "categoria_id": atual.categoria_id,
+                   "preco_centavos": atual.preco_centavos, "estoque_minimo": atual.estoque_minimo},
+         "depois": {"nome": nome, "categoria_id": categoria_id,
+                    "preco_centavos": preco_centavos, "estoque_minimo": estoque_minimo}},
+        autorizado_por=gerente_id, agora=agora)
+
+
+def _gravar_ativo(conexao, produto_id, ativo, usuario_id, gerente_id, agora):
+    """Desativa ou reativa o produto. Chamar dentro de uma transação."""
+    produto = obter_produto(conexao, produto_id)
+    if ativo:
+        _validar_categoria_ativa(conexao, produto.categoria_id)
+    conexao.execute("UPDATE produtos SET ativo = ?, atualizado_em = ? WHERE id = ?",
+                    (1 if ativo else 0, texto_data(agora), produto_id))
+    registrar_auditoria(conexao, "produto_reativado" if ativo else "produto_desativado", usuario_id,
+                        {"produto_id": produto_id}, autorizado_por=gerente_id, agora=agora)
+
+
+def _alterar_ativo(conexao, produto_id, ativo, usuario_id, autorizacao, agora):
     with transacao(conexao):
         gerente = verificar_gerente(conexao, autorizacao)
-        produto = obter_produto(conexao, produto_id)
-        if ativo:
-            _validar_categoria_ativa(conexao, produto.categoria_id)
-        conexao.execute("UPDATE produtos SET ativo = ?, atualizado_em = ? WHERE id = ?",
-                        (1 if ativo else 0, texto_data(agora), produto_id))
-        registrar_auditoria(conexao, acao, usuario_id, {"produto_id": produto_id},
-                            autorizado_por=gerente.id, agora=agora)
+        _gravar_ativo(conexao, produto_id, ativo, usuario_id, gerente.id, agora)
     return obter_produto(conexao, produto_id)
 
 
 def desativar_produto(conexao, produto_id, usuario_id, autorizacao, agora=None):
     """O produto some do cardápio; comandas e vendas antigas continuam com ele."""
-    return _alterar_ativo(conexao, produto_id, False, "produto_desativado", usuario_id, autorizacao, agora)
+    return _alterar_ativo(conexao, produto_id, False, usuario_id, autorizacao, agora)
 
 
 def reativar_produto(conexao, produto_id, usuario_id, autorizacao, agora=None):
-    return _alterar_ativo(conexao, produto_id, True, "produto_reativado", usuario_id, autorizacao, agora)
+    return _alterar_ativo(conexao, produto_id, True, usuario_id, autorizacao, agora)
 
 
 # ============================================================
@@ -294,15 +324,19 @@ def registrar_perda(conexao, produto_id, quantidade, motivo, usuario_id, autoriz
 
 def ajustar_contagem(conexao, produto_id, estoque_contado, motivo, usuario_id, autorizacao, agora=None):
     """Ajuste de inventário: informa quanto foi contado e grava a diferença."""
-    exigir_inteiro(estoque_contado, "o estoque contado", minimo=0)
-    motivo = exigir_texto(motivo, "o motivo do ajuste", maximo=200)
     with transacao(conexao):
         gerente = verificar_gerente(conexao, autorizacao)
-        produto = obter_produto(conexao, produto_id)
-        _inserir_movimento(conexao, produto_id, "ajuste", estoque_contado - produto.estoque, usuario_id,
-                           motivo=motivo, autorizado_por=gerente.id, estoque_contado=estoque_contado,
-                           agora=agora)
+        _gravar_ajuste(conexao, produto_id, estoque_contado, motivo, usuario_id, gerente.id, agora)
     return obter_produto(conexao, produto_id)
+
+
+def _gravar_ajuste(conexao, produto_id, estoque_contado, motivo, usuario_id, gerente_id, agora):
+    """Valida e grava o ajuste de contagem. Chamar dentro de uma transação."""
+    exigir_inteiro(estoque_contado, "o estoque contado", minimo=0)
+    motivo = exigir_texto(motivo, "o motivo do ajuste", maximo=200)
+    produto = obter_produto(conexao, produto_id)
+    _inserir_movimento(conexao, produto_id, "ajuste", estoque_contado - produto.estoque, usuario_id,
+                       motivo=motivo, autorizado_por=gerente_id, estoque_contado=estoque_contado, agora=agora)
 
 
 def listar_movimentos(conexao, produto_id, limite=100):

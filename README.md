@@ -11,7 +11,7 @@ Sistema web para gestão de bar: mesas, comandas, pagamentos, estoque, controle 
 
 ## Status
 
-Versão 2.0 (web) em desenvolvimento. O andamento detalhado está no `ROTEIRO.md`.
+Versão 2.0 (web) pronta para a validação no bar (`VALIDACAO.md`). O histórico das etapas está no `ROTEIRO.md`.
 
 Etapas concluídas:
 
@@ -27,10 +27,7 @@ Etapas concluídas:
 - ✅ Etapa 7 — Produtos e estoque
 - ✅ Etapa 8 — Relatórios
 - ✅ Etapa 9 — Acesso pela rede, PWA e teste em tablet real (teste no tablet do bar na validação)
-
-Próximas etapas:
-
-- Etapa 10 — Backup automático, executável, início com o Windows e entrega
+- ✅ Etapa 10 — Backup automático, executável, início com o Windows, importação do cardápio e entrega
 
 > A versão desktop antiga (Tkinter) está preservada na tag `v1.0-tkinter` e na pasta `legado_tkinter/`, apenas como referência.
 
@@ -44,8 +41,10 @@ Próximas etapas:
 - **Comandas:** balcão / para viagem com várias comandas identificadas pelo nome do cliente, observação por item. Item removido sem PIN até 2 minutos após o lançamento; depois disso, só cancelamento com motivo e PIN de gerente.
 - **Pagamento:** o cliente paga o preço de tabela dos produtos (sem taxa de serviço nem couvert), desconto opcional em R$ (desligado por padrão; o gerente decide se o bar usa e autoriza cada um, com motivo), divisão entre Dinheiro, Débito, Crédito e PIX, pagamento parcial (cada um paga a sua parte, com saldo sempre visível), estorno de pagamento lançado errado, valor por pessoa e cálculo de troco.
 - **Produtos e estoque:** cadastro, edição e desativação, categorias editáveis, estoque mínimo com alerta, entrada de mercadoria, perda e ajuste de contagem. Produto sem estoque pode ser vendido (com aviso) e aparece destacado nos relatórios.
-- **Relatórios:** vendas por dia, semana, mês ou intervalo, total por forma de pagamento, produtos mais vendidos, cancelamentos e descontos, estoque negativo ou abaixo do mínimo, histórico de fechamentos de caixa e exportação para CSV.
-- **Segurança dos dados:** backup automático do banco, mantendo os 7 últimos.
+- **Cardápio por planilha:** o dono preenche no Excel uma planilha (categoria, produto, preço, estoque e estoque mínimo) e o gerente importa pela tela de produtos, vendo antes, linha a linha, o que muda e quais linhas têm erro.
+- **Relatórios:** vendas por dia, semana, mês ou intervalo, total por forma de pagamento, produtos mais vendidos, cancelamentos e descontos, estoque negativo ou abaixo do mínimo, histórico de fechamentos de caixa e exportação para CSV. "Hoje" é a noite do caixa: o que acontece depois da meia-noite conta no dia em que o caixa foi aberto.
+- **Segurança dos dados:** backup automático do banco ao abrir o servidor e uma vez por dia, mantendo os 7 últimos, e o botão "Fazer backup agora" para o gerente (tela Sobre).
+- **Servidor fácil de operar:** um programa só (`TucandeiraBar.exe`), que abre junto com o Windows numa janela que mostra o endereço para o tablet e que não trava com um clique.
 
 ## Planos para a versão 2.1
 
@@ -60,13 +59,15 @@ Próximas etapas:
 - Flask (aplicação web) e waitress (servidor de produção no Windows)
 - Jinja2 (templates), CSS próprio e JavaScript simples, sem frameworks pesados
 - SQLite em modo WAL (banco de dados local, módulo `sqlite3`)
-- Pillow (geração dos ícones do PWA)
+- Tkinter (janela do servidor, já vem com o Python)
+- Pillow (geração dos ícones do PWA e do executável)
+- PyInstaller (gera o `TucandeiraBar.exe`, que roda sem Python)
 - Fonte Anton (licença OFL), incluída em `static/fonts/`
 - pytest (testes)
 
 ## Requisitos
 
-- **Computador servidor:** Windows 10 ou superior, Python 3.14 (instalador oficial do python.org), conectado à rede do bar (de preferência por cabo) e com IP fixo.
+- **Computador servidor:** Windows 10 ou superior, conectado à rede do bar (de preferência por cabo) e com IP fixo. **Não precisa de Python**: o sistema é o `TucandeiraBar.exe`.
 - **Navegador do PC servidor:** Chrome ou Edge atualizado.
 - **Tablet e celulares:** Android com o navegador **Chrome**, inclusive versões antigas (o sistema foi escrito para funcionar em tablets reaproveitados). Celulares com tela a partir de 360 px de largura. Safari, iPhone e iPad não são suportados.
 - Os aparelhos precisam estar no mesmo Wi-Fi do computador servidor.
@@ -74,57 +75,81 @@ Próximas etapas:
 
 ## Instalação no bar
 
-O passo a passo de instalação no computador do bar com o executável `TucandeiraBar.exe` (sem precisar de Python), com os dados em `C:\TucandeiraBar\dados\` e início automático com o Windows, entra neste README na Etapa 10.
+### O que levar
 
-## Para desenvolvedores
+Um pen drive com a pasta **`TucandeiraBar-2.0`** (ou o arquivo `TucandeiraBar-2.0.zip`, gerado por `scripts\gerar_exe.ps1`):
 
-### Instalar
+| Arquivo | Para que serve |
+|---|---|
+| `TucandeiraBar.exe` | o sistema (servidor), roda sem Python |
+| `INSTALAR.bat` | instala tudo no computador do bar |
+| `ATUALIZAR.bat` | troca o programa por uma versão nova, sem mexer nos dados |
+| `COMECAR_BANCO_LIMPO.bat` | guarda o banco da validação e começa do zero |
+| `*.ps1` | usados pelos `.bat` (firewall, início com o Windows...) |
+| `modelo_cardapio.csv` | planilha do cardápio para o dono preencher no Excel |
+| `README.md`, `VALIDACAO.md` | estas instruções e o roteiro da noite de validação |
+| `validacao_cardapio.csv` | cardápio usado só na noite de validação |
 
-```
-git clone https://github.com/marcianocamposgit/sistema_tucandeira-bar.git
-cd sistema_tucandeira-bar
-python -m pip install -r requirements.txt
-```
+Leve também o tablet carregado e, se possível, um cabo de rede para o computador servidor.
 
-O banco de dados é criado automaticamente em `data/tucandeira.db` na primeira execução, já com o cardápio inicial. No primeiro acesso, o sistema pede para criar o usuário gerente. Para começar com o banco limpo, basta **não** rodar o comando de dados de demonstração (abaixo).
+### Passo a passo
 
-### Iniciar o servidor
+1. **Copie** a pasta `TucandeiraBar-2.0` para o computador do bar (ex.: na Área de Trabalho). Se veio o `.zip`, clique com o botão direito → Extrair tudo.
+2. **Instale:** dois cliques em `INSTALAR.bat` e aceite o pedido de administrador. O instalador:
+   - cria `C:\TucandeiraBar\programa\` (o `TucandeiraBar.exe`) e `C:\TucandeiraBar\dados\` (banco, backups, logs);
+   - libera a porta 5000 no Firewall do Windows, **só na rede Privada**;
+   - faz o servidor abrir sozinho quando o usuário entra no Windows;
+   - cria o atalho **Tucandeira Rock Bar** na Área de Trabalho e abre o servidor.
 
-Uso no bar (servidor waitress, acessível pela rede local):
+   Se o Windows mostrar "O Windows protegeu o computador" (SmartScreen), clique em **Mais informações → Executar assim mesmo**: o programa não tem assinatura digital paga.
+3. **Aviso do firewall:** se aparecer a pergunta do Firewall do Windows sobre o TucandeiraBar, marque **Redes privadas** e clique em **Permitir acesso** (nunca em Cancelar — isso cria um bloqueio; veja "Solução de problemas").
+4. **Rede privada:** o instalador mostra as redes do computador. A rede do bar precisa aparecer como **Private**; se estiver Public, mude em Configurações → Rede e Internet → propriedades da rede → **Rede privada**.
+5. **IP fixo pelo roteador:** siga "Rede do bar → 1. IP fixo" (reserva de DHCP). Depois, reinicie o computador e confira que a janela do servidor abriu sozinha e mostra o IP reservado.
+6. **Teste no tablet:**
+   1. Conecte o tablet ao Wi-Fi do bar (a rede principal, não a de visitantes).
+   2. No Chrome do tablet, digite o endereço que aparece na janela do servidor (ex.: `http://192.168.0.10:5000`). Deve abrir a tela do sistema.
+   3. Se não abrir, siga "Solução de problemas" (firewall, rede privada, isolamento de clientes no roteador). Enquanto isso, o bar funciona só pelo PC.
+   4. Opcional: instale como app em tela cheia (veja "Abrir como aplicativo").
+7. **Validação:** faça a noite de teste completa do **`VALIDACAO.md`**. Ela cria usuários de teste (Gerente Demo e Ana), importa o cardápio da validação (`validacao_cardapio.csv`) e confere, com valores esperados, mesas, comandas, pagamentos, caixa, estoque, reinício do servidor, contingência pelo PC e relatórios.
+8. **Banco limpo:** terminada a validação, rode o `COMECAR_BANCO_LIMPO.bat` (veja abaixo).
+9. **Primeiro acesso de verdade:** no navegador do computador (`http://localhost:5000`), crie o usuário **gerente** com um PIN que só o dono saiba. Em Usuários, cadastre os garçons, cada um com o seu PIN.
+10. **Cardápio do bar:** em Produtos → **Importar planilha**, envie o `modelo_cardapio.csv` preenchido pelo dono no Excel (ou baixe o modelo pela tela), confira e grave com o PIN do gerente. Marque "Desativar os produtos que não estão na planilha" para tirar do cardápio os 6 produtos de exemplo que vêm no banco novo.
+11. Pronto: abra o caixa e comece a vender.
 
-```
-python servidor.py
-```
+### Começar com o banco limpo depois da validação
 
-Ao iniciar, o console mostra o endereço para acessar, por exemplo `http://192.168.0.10:5000`. A porta pode ser alterada em `config.py` (`PORTA`).
+A validação deixa vendas, caixas e usuários de teste no banco. Para começar a usar de verdade:
 
-Desenvolvimento (servidor do Flask com recarga automática — não usar no bar):
+1. Dois cliques em `COMECAR_BANCO_LIMPO.bat` e digite **LIMPAR**.
+2. O script fecha o servidor e **guarda** (não apaga) o banco, os backups e os logs da validação em `C:\TucandeiraBar\dados\validacao_<data e hora>\`. Depois abre o servidor de novo.
+3. O sistema começa vazio, só com o cardápio inicial de exemplo: siga os passos 9 a 11 acima (gerente de verdade, garçons e cardápio do bar).
 
-```
-python app.py
-```
+Faça isso **uma vez só**, antes da primeira venda real. Nunca copie o banco do computador de desenvolvimento para o bar e nunca use os dados de demonstração (`popular_demo.py`) no bar.
 
-Atalho para desenvolvedores no Windows: `iniciar.bat`, na raiz do projeto, encerra um servidor anterior que esteja usando a porta 5000, abre o navegador em `http://localhost:5000` e inicia `python servidor.py` (dá para abrir com dois cliques). Precisa do Python instalado; não é o instalador do bar.
+### Atualizar o sistema
 
-### Testes e dados de demonstração
+1. Gere a versão nova (`scripts\gerar_exe.ps1`) e leve a pasta `TucandeiraBar-<versão>` ao bar.
+2. Com o bar sem movimento (de preferência com o caixa fechado), dois cliques em `ATUALIZAR.bat`.
+3. O script fecha o servidor, guarda o programa antigo como `TucandeiraBar.anterior.exe`, coloca o novo em `C:\TucandeiraBar\programa\` e abre de novo. **Os dados não são tocados.** Ao abrir, a versão nova faz um backup e atualiza a estrutura do banco sozinha.
+4. Confira: na tela **Sobre**, a versão nova e o último backup (de agora); abra uma mesa de teste e cancele.
+5. Se algo der errado: feche o servidor, apague o `TucandeiraBar.exe` novo, renomeie `TucandeiraBar.anterior.exe` para `TucandeiraBar.exe` e restaure o backup feito na atualização (veja "Backup e restauração").
 
-Para rodar os testes:
+### A janela do servidor
 
-```
-python -m pytest
-```
+O servidor abre numa janela verde com o endereço para os tablets, o último backup e os botões **Abrir o sistema neste computador** e **Parar o servidor**. Ela pode ser minimizada, mas não fechada: fechar a janela para o sistema no caixa e nos tablets (ela pergunta antes). Diferente de uma janela preta de console, clicar nela nunca pausa o servidor. Se o servidor já estiver aberto, os dois cliques no atalho só abrem o sistema no navegador.
 
-Para encher o banco de **desenvolvimento** com dados de demonstração (usuários, produtos e dias de vendas no passado), o comando se recusa a rodar num banco de produção:
+## Backup e restauração
 
-```
-python scripts/popular_demo.py            # num banco ainda sem usuários
-python scripts/popular_demo.py --recriar   # guarda um backup e recomeça do zero
-python scripts/popular_demo.py --recriar --sem-movimento-hoje   # só o histórico: hoje sem caixa aberto nem comandas
-```
+- **Automático:** ao abrir o servidor e uma vez por dia enquanto ele estiver aberto, em `C:\TucandeiraBar\dados\backups\` (arquivos `tucandeira_AAAA-MM-DD_HH-MM-SS.db`). Ficam os 7 mais recentes.
+- **Na hora:** tela **Sobre e backup** (botão no rodapé do menu) → **Fazer backup agora** (só gerente). A tela mostra a data do último backup.
+- **Cópia fora do computador:** de vez em quando, copie a pasta `backups` para um pen drive; se o computador quebrar, os dados estão lá.
 
-Usuários de demonstração (nome / PIN): Gerente Demo / 1234, Ana / 1111, Bruno / 2222.
+**Restaurar um backup** (ex.: o banco estragou, ou uma atualização deu errado):
 
-> ⚠️ **Os PINs de demonstração nunca devem ser usados no bar.** Eles estão publicados aqui e servem só para testar no computador de desenvolvimento. No bar, cada pessoa cria o seu próprio PIN.
+1. Feche o servidor (botão **Parar o servidor** na janela).
+2. Em `C:\TucandeiraBar\dados\`, renomeie `tucandeira.db` para `tucandeira_estragado.db` (se existir) e apague `tucandeira.db-wal` e `tucandeira.db-shm` (se existirem).
+3. Copie o backup escolhido de `backups\` para `C:\TucandeiraBar\dados\` e renomeie a cópia para `tucandeira.db`.
+4. Abra o servidor (atalho da Área de Trabalho). Tudo o que foi lançado depois daquele backup se perde; confira o caixa.
 
 ## Rede do bar
 
@@ -149,7 +174,7 @@ Os tablets acessam o servidor pelo IP (ex.: `http://192.168.0.10:5000`). Se o IP
 
 ### 2. Liberar a porta no Firewall do Windows (só rede privada)
 
-O script `scripts/liberar_firewall.ps1` cria **uma** regra de entrada, só para a porta do sistema (5000) e só no perfil de rede **Privada**. Redes públicas continuam bloqueadas.
+O `INSTALAR.bat` já faz isso. O script `liberar_firewall.ps1` cria **uma** regra de entrada, só para a porta do sistema (5000) e só no perfil de rede **Privada**. Redes públicas continuam bloqueadas. Para rodar à mão (ex.: depois de mudar a porta):
 
 1. Abra o **PowerShell como administrador** (menu Iniciar → digite PowerShell → botão direito → Executar como administrador).
 2. Vá até a pasta do script e rode:
@@ -169,9 +194,10 @@ Na rede usada pelos tablets (a principal, não a de visitantes), o isolamento de
 - **No próprio computador servidor (caixa):** abra o navegador em `http://localhost:5000`, toque (ou clique) no seu nome e digite o PIN de 4 dígitos.
 - **Nos tablets:**
   1. Conecte o tablet ao Wi-Fi do bar (a mesma rede do computador servidor).
-  2. Abra o Chrome e digite o endereço mostrado pelo servidor ao iniciar, ex.: `http://192.168.0.10:5000`.
+  2. Abra o Chrome e digite o endereço mostrado na janela do servidor (ou na tela **Sobre**), ex.: `http://192.168.0.10:5000`.
   3. Toque no seu nome e digite o seu PIN de 4 dígitos no teclado da tela.
   4. Pronto: o sistema funciona normalmente numa aba comum do navegador. Instalar como app é opcional.
+- **Nos celulares (opcional):** do mesmo jeito que no tablet, no Chrome do celular conectado ao Wi-Fi do bar. Na tela pequena, a comanda fica em duas abas ("Cardápio" e "Comanda"), com o total e o "Fechar Conta" sempre no rodapé.
 
 ### Abrir como aplicativo em tela cheia (opcional)
 
@@ -199,8 +225,8 @@ O atendimento não para. O computador servidor faz tudo sozinho, **sem Wi-Fi e s
 
 Siga os passos na ordem; cada um elimina uma causa.
 
-1. **O servidor está rodando?** No próprio computador servidor, abra `http://localhost:5000`. Se não abrir, o problema é no servidor (veja a janela/console do servidor).
-2. **O servidor responde pelo IP da rede?** Ainda no computador servidor, abra `http://<IP-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`). Se não abrir, confira o IP com `ipconfig` e se o servidor foi iniciado com `python servidor.py` (o `app.py` só escuta em `localhost`).
+1. **O servidor está rodando?** No próprio computador servidor, abra `http://localhost:5000`. Se não abrir, abra o servidor pelo atalho **Tucandeira Rock Bar** da Área de Trabalho. Se ele não abrir, veja o log em `C:\TucandeiraBar\dados\logs\servidor.log`.
+2. **O servidor responde pelo IP da rede?** Ainda no computador servidor, abra `http://<IP-do-servidor>:5000` (ex.: `http://192.168.0.10:5000`). Se não abrir, confira o IP com `ipconfig` (para quem desenvolve: o `app.py` só escuta em `localhost`; use o `servidor.py`).
 3. **Mesma rede?** O tablet precisa estar no mesmo Wi-Fi do servidor (não na rede de visitantes nem nos dados móveis). Confira também se o IP do servidor não mudou (por isso o IP fixo).
 4. **Firewall do Windows:** a porta precisa estar liberada para redes **Privadas** (`scripts/liberar_firewall.ps1`, veja "Rede do bar") e a rede do bar precisa estar marcada como **Privada** no Windows. Confira também se não há uma regra de bloqueio para o programa (criada ao clicar em Cancelar no aviso do firewall).
 5. **Isolamento de clientes no roteador:** se o tablet abre a página do roteador (ex.: `http://192.168.1.1`) mas não alcança o computador servidor em nenhuma porta — mesmo com o firewall do Windows desligado —, o roteador está impedindo que os aparelhos conversem entre si. É comum em roteadores de operadora e em redes de visitantes. O nome da opção varia: "Isolamento de AP", "AP Isolation", "Client Isolation", "Isolamento de clientes", "Wireless isolation".
@@ -211,12 +237,76 @@ Siga os passos na ordem; cada um elimina uma causa.
 
 O sistema foi feito para uso **apenas na rede local do bar**. Não abra a porta no roteador nem exponha o servidor à internet. A sessão expira após um tempo sem uso, e as ações de gerente sempre pedem o PIN do gerente na hora.
 
+## Para desenvolvedores
+
+### Instalar
+
+```
+git clone https://github.com/marcianocamposgit/sistema_tucandeira-bar.git
+cd sistema_tucandeira-bar
+python -m pip install -r requirements.txt
+```
+
+O banco de dados é criado automaticamente em `data/tucandeira.db` na primeira execução, já com o cardápio inicial. No primeiro acesso, o sistema pede para criar o usuário gerente. Para começar com o banco limpo, basta **não** rodar o comando de dados de demonstração (abaixo).
+
+### Iniciar o servidor
+
+Servidor de produção (waitress, acessível pela rede local), o mesmo código do `TucandeiraBar.exe`:
+
+```
+python servidor.py                  # abre a janela do servidor e o navegador
+python servidor.py --sem-janela     # só no console (QuickEdit desligado)
+python servidor.py --sem-navegador  # não abre o navegador ao iniciar
+```
+
+Ao iniciar, mostra o endereço para acessar, por exemplo `http://192.168.0.10:5000`. A porta pode ser alterada em `config.py` (`PORTA`). Se o servidor já estiver aberto (porta ocupada), avisa e só abre o navegador. Log em `data/logs/servidor.log` (no bar, `C:\TucandeiraBar\dados\logs\`), com rotação.
+
+Desenvolvimento (servidor do Flask com recarga automática — não usar no bar):
+
+```
+python app.py
+```
+
+Atalho para desenvolvedores no Windows: `iniciar.bat`, na raiz do projeto, encerra um servidor anterior que esteja usando a porta 5000 e inicia `python servidor.py --sem-janela`, que abre o navegador em `http://localhost:5000` (dá para abrir com dois cliques). Precisa do Python instalado; não é o instalador do bar.
+
+### Testes e dados de demonstração
+
+Para rodar os testes:
+
+```
+python -m pytest
+```
+
+Para encher o banco de **desenvolvimento** com dados de demonstração (usuários, produtos e dias de vendas no passado), o comando se recusa a rodar num banco de produção:
+
+```
+python scripts/popular_demo.py            # num banco ainda sem usuários
+python scripts/popular_demo.py --recriar   # guarda um backup e recomeça do zero
+python scripts/popular_demo.py --recriar --sem-movimento-hoje   # só o histórico: hoje sem caixa aberto nem comandas
+```
+
+Usuários de demonstração (nome / PIN): Gerente Demo / 1234, Ana / 1111, Bruno / 2222.
+
+### Gerar o executável e o pacote de entrega
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\gerar_exe.ps1
+```
+
+Roda os testes, gera `dist\TucandeiraBar.exe` com o PyInstaller (receita versionada em `TucandeiraBar.spec`: um arquivo só, sem console, com templates, static e assets embutidos e o ícone da logo) e monta `dist\TucandeiraBar-<versão>\` e o `.zip` para levar ao bar (`scripts/montar_entrega.py`). Depois de trocar `assets/logo.png`, rode antes `python scripts/gerar_imagens.py`.
+
+Para testar o executável sem tocar em `C:\TucandeiraBar\dados\`, aponte a pasta de dados para outro lugar com a variável `TUCANDEIRA_DADOS`.
+
+> ⚠️ **Os PINs de demonstração nunca devem ser usados no bar.** Eles estão publicados aqui e servem só para testar no computador de desenvolvimento. No bar, cada pessoa cria o seu próprio PIN.
+
 ## Estrutura de pastas
 
 ```
 tucandeira-bar/
 ├── app.py               # cria o app Flask (e roda o servidor de desenvolvimento)
-├── servidor.py          # inicia o sistema com waitress na rede local
+├── servidor.py          # inicia o sistema com waitress na rede local (é também o TucandeiraBar.exe)
+├── janela_servidor.py   # janela do servidor (Tkinter): endereços, backup, parar
+├── TucandeiraBar.spec   # receita do PyInstaller para o executável
 ├── config.py            # número de mesas, porta, prazos, formas de pagamento, tempo de sessão, caminhos
 ├── database.py          # conexão SQLite (WAL), transações e criação das tabelas
 ├── models/              # classes de dados (Produto, Comanda, Venda...)
@@ -226,12 +316,10 @@ tucandeira-bar/
 ├── static/              # CSS, JavaScript, fonte Anton, ícones e manifest do PWA
 ├── data/                # banco de dados e backups (não versionados)
 ├── assets/              # logo e imagens
-├── scripts/            # utilitários (imagens da logo, dados de demonstração, instalação)
+├── scripts/             # imagens da logo, dados de demonstração, gerar o .exe, instalar, atualizar, firewall
 ├── legado_tkinter/      # versão antiga em Tkinter (só referência)
 └── tests/               # testes automatizados (pytest)
 ```
-
-> A estrutura acima é a da versão 2.0. Durante o desenvolvimento, alguns arquivos ainda não existem — veja o andamento no `ROTEIRO.md`.
 
 ## Autor
 

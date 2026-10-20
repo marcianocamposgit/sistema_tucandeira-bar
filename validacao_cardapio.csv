@@ -1,0 +1,14 @@
+﻿Categoria;Produto;Preço;Estoque;Estoque mínimo
+Bebida;Brahma Lata;8,00;80;24
+Bebida;Heineken Long Neck;12,00;25;12
+Bebida;Original 600ml;14,00;6;12
+Bebida;Coca-Cola Lata;6,00;34;12
+Bebida;Água sem Gás;4,00;11;10
+Bebida;Caipirinha;18,00;13;10
+Tira-Gosto;Porção Calabresa;28,00;7;4
+Tira-Gosto;Batata Frita;25,00;14;5
+Lanche;Pastel Carne;7,00;23;10
+Lanche;X-Burguer;22,00;4;5
+Lanche;X-Tudo;28,00;11;5
+Lanche;Misto Quente;12,00;5;5
+Cigarro;Marlboro 20un;18,00;8;5

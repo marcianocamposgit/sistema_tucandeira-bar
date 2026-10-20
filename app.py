@@ -12,7 +12,8 @@ from flask import Flask, render_template
 
 import config
 from database import ambiente_do_banco, conectar, migrar
-from routes import auth, caixa, conexao, mesas, pagamentos, principal, produtos, relatorios, seguranca, usuarios
+from routes import (auth, caixa, conexao, mesas, pagamentos, principal, produtos, relatorios, seguranca, sistema,
+                    usuarios)
 from services.backup import fazer_backup
 from services.formatacao import formatar_data_hora, formatar_moeda, plural
 
@@ -81,6 +82,7 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         PERMANENT_SESSION_LIFETIME=timedelta(minutes=config.TEMPO_SESSAO_MINUTOS),
+        MAX_CONTENT_LENGTH=2 * 1024 * 1024,  # a planilha do cardápio é o maior envio (até 1 MB)
     )
     if configuracoes_extras:
         app.config.update(configuracoes_extras)
@@ -100,6 +102,7 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
     app.register_blueprint(pagamentos.bp)
     app.register_blueprint(produtos.bp)
     app.register_blueprint(relatorios.bp)
+    app.register_blueprint(sistema.bp)
 
     @app.url_defaults
     def versao_dos_arquivos_estaticos(endpoint, valores):
@@ -125,6 +128,16 @@ def create_app(pasta_dados=None, ambiente=None, backup=False, configuracoes_extr
     def nao_encontrado(_erro):
         return render_template("erro.html", titulo="Página não encontrada",
                                mensagem="O endereço digitado não existe."), 404
+
+    @app.errorhandler(413)
+    def grande_demais(_erro):
+        return render_template("erro.html", titulo="Arquivo grande demais",
+                               mensagem="O arquivo enviado passa do limite. Uma planilha de cardápio tem bem menos."), 413
+
+    @app.errorhandler(405)
+    def metodo_nao_permitido(_erro):
+        return render_template("erro.html", titulo="Página não encontrada",
+                               mensagem="Este endereço não se abre assim. Volte e use os botões da tela."), 405
 
     @app.errorhandler(500)
     def erro_interno(_erro):

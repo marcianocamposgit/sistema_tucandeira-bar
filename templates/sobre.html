@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "componentes/pin.html" as pin with context %}
+{% block titulo %}Sobre — Tucandeira Rock Bar{% endblock %}
+
+{% block conteudo %}
+<section class="pagina">
+    <div class="pagina-topo">
+        <h1 class="titulo">Sobre o sistema</h1>
+        <a href="{{ url_for('principal.inicio') }}" class="botao botao-secundario botao-pequeno">‹ Voltar</a>
+    </div>
+
+    <div class="cartao">
+        <h2 class="secao-titulo secao-titulo-cartao">Tucandeira Rock Bar — Sistema de Gestão</h2>
+        <p>Versão <strong>{{ versao }}</strong> · {{ ambiente }}</p>
+        <p class="subtitulo nota">Autor: Marciano Campos. Fonte dos títulos: Anton (SIL Open Font License).</p>
+    </div>
+
+    <div class="cartao">
+        <h2 class="secao-titulo secao-titulo-cartao">Endereço para os tablets e celulares</h2>
+        {% for endereco in enderecos %}
+        <p class="endereco-destaque">{{ endereco }}</p>
+        {% else %}
+        <p>Este computador não está conectado a nenhuma rede.</p>
+        {% endfor %}
+        <p>Neste computador (caixa): <strong>http://localhost:{{ porta }}</strong></p>
+        <p class="subtitulo nota">O tablet precisa estar no mesmo Wi-Fi deste computador.</p>
+    </div>
+
+    <div class="cartao">
+        <h2 class="secao-titulo secao-titulo-cartao">Backup</h2>
+        <p>Último backup: <strong>{{ ultimo_backup or "nenhum ainda" }}</strong> ({{ backups_texto }}; o sistema guarda os {{ backups_mantidos }} mais recentes).</p>
+        <p class="subtitulo nota">O backup é feito sozinho ao abrir o servidor e uma vez por dia enquanto ele estiver aberto.</p>
+        <p class="subtitulo nota">Pasta de dados: {{ pasta_dados }}</p>
+        {% if usuario.gerente %}
+        <form method="post" action="{{ url_for('sistema.fazer_backup') }}">
+            {{ pin.csrf() }}
+            <button type="submit" class="botao botao-destaque">Fazer backup agora</button>
+        </form>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,26 +1,31 @@
-# Validação em casa — uma noite completa de expediente
+# Validação no bar — uma noite completa de expediente
 
-Roteiro para executar **antes das Etapas 9 e 10**, simulando uma noite inteira do bar com dois aparelhos:
+Roteiro para executar **no bar, com o sistema já instalado** (`INSTALAR.bat`, veja o README) e **antes de começar a vender de verdade**, simulando uma noite inteira com dois aparelhos:
 
 | Aparelho | Quem | Endereço |
 |---|---|---|
-| PC (caixa) | **Gerente Demo** (PIN 1234) | `http://localhost:5000` |
-| Celular (garçom) | **Ana** (PIN 1111) | `http://192.168.137.1:5000`, pelo Hotspot móvel do Windows |
+| PC servidor (caixa) | **Gerente Demo** (PIN 1234) | `http://localhost:5000` |
+| Tablet (garçom) | **Ana** (PIN 1111) | o endereço da janela do servidor, ex.: `http://192.168.0.10:5000` |
+
+Os usuários e o cardápio desta noite são só para a validação: no fim, o banco inteiro é guardado à parte com o `COMECAR_BANCO_LIMPO.bat` e o bar começa do zero, com os usuários e o cardápio de verdade.
 
 Siga os passos **na ordem**. Cada **✔ Conferir** traz o valor que deve aparecer na tela. Se algo não bater, anote o número do passo e o que apareceu, e continue se der.
 
-> Este roteiro foi executado pelo cliente de teste do Flask, num banco temporário copiado do banco de demonstração, em 19/10/2026: **todos os valores conferiram**.
+> Este roteiro foi executado pelo cliente de teste do Flask, num banco de produção novo, em 19/10/2026 (preparação com a planilha, a noite inteira e os relatórios): **todos os valores conferiram**. O tablet real, o Wi-Fi do bar e o Excel ficam para conferir aqui.
 
 ---
 
 ## 0. Preparação
 
-1. Banco de demonstração recriado em 19/10/2026 com:
-   ```
-   python scripts/popular_demo.py --recriar --sem-movimento-hoje
-   ```
-   Ele tem o histórico das noites anteriores, o **caixa fechado**, nenhuma comanda aberta e o **desconto desligado**.
-2. **Estoque no início** (confira em Produtos antes de começar):
+1. O servidor está aberto (janela verde "Tucandeira Rock Bar — Servidor") e o banco está **novo**, sem nenhum usuário. Se já foi usado, rode antes o `COMECAR_BANCO_LIMPO.bat`.
+2. **PC:** no navegador (`http://localhost:5000`), o sistema pede o primeiro acesso: crie o gerente **Gerente Demo** com PIN **1234**.
+3. **PC:** Usuários → cadastrar **Ana**, perfil **Operador**, PIN **1111** (autorize com Gerente Demo, 1234).
+4. **PC:** Produtos → **Importar planilha** → envie o arquivo **`validacao_cardapio.csv`** (está na pasta de entrega) → **Conferir planilha**.
+
+   ✔ **Conferir:** Novos **8**, Alterados **5**, Sem mudança **0**, Com erro **0**; os 5 alterados são os produtos de exemplo que já vêm no banco (estoque e mínimo mudam); aparece a opção de desativar **1 produto** que não está na planilha: **Whisky 50ml**.
+5. Marque **Desativar 1 produto que não está na planilha** → **Gravar no cardápio** → Gerente Demo, PIN 1234.
+
+   ✔ **Conferir:** mensagem **"Cardápio importado: 8 produtos novos, 5 produtos alterados, 1 produto desativado."** e, em Produtos, este estoque:
 
    | Produto | Estoque |
    |---|---|
@@ -31,16 +36,7 @@ Siga os passos **na ordem**. Cada **✔ Conferir** traz o valor que deve aparece
    | X-Burguer | 4 |
    | Original 600ml | 6 |
    | Misto Quente | 5 |
-
-   Se o banco for recriado em outro dia, esses números mudam (o histórico é sorteado a partir da data). Nesse caso, anote os do início e faça as contas pelas diferenças indicadas nos passos.
-3. No PC: ligue o **Hotspot móvel** (Configurações → Rede e Internet → Hotspot móvel) e conecte o celular nele. O firewall do Windows fica **ligado**.
-4. No PC, numa janela de terminal:
-   ```
-   cd C:\tucandeira-bar
-   python servidor.py
-   ```
-5. PC: abra `http://localhost:5000` e entre como **Gerente Demo** (1234).
-6. Celular: abra `http://192.168.137.1:5000` numa aba comum do Chrome e entre como **Ana** (1111).
+6. **Tablet:** conectado ao Wi-Fi do bar, abra no Chrome, numa aba comum, o endereço que aparece na janela do servidor e entre como **Ana** (1111). Gire o tablet: retrato e paisagem sem nada cortado.
 
 > A sessão expira após 15 minutos sem uso. Se cair, entre de novo: nada se perde.
 
@@ -54,7 +50,7 @@ Siga os passos **na ordem**. Cada **✔ Conferir** traz o valor que deve aparece
 
 ---
 
-## 2. Abrir as mesas e os balcões (celular, Ana)
+## 2. Abrir as mesas e os balcões (tablet, Ana)
 
 Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é posta pelo botão **Obs.** do item, na aba Comanda.
 
@@ -76,7 +72,7 @@ Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é p
 
 ---
 
-## 3. Remover um item antes de 2 minutos (celular)
+## 3. Remover um item antes de 2 minutos (tablet)
 
 1. Mesa 4: lance **1× Original 600ml** por engano.
 
@@ -87,18 +83,18 @@ Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é p
 
 ---
 
-## 4. Cancelar um item depois de 2 minutos (celular, com PIN)
+## 4. Cancelar um item depois de 2 minutos (tablet, com PIN)
 
 1. Pelo menos 2 minutos depois de lançar o X-Burguer, abra a Mesa 3 e toque em **−** no X-Burguer.
 
    ✔ Em vez de remover, abre o quadro **Cancelar item**.
-2. Motivo **Cliente desistiu** → autorização: **Gerente Demo**, PIN **1234** (digitado no celular).
+2. Motivo **Cliente desistiu** → autorização: **Gerente Demo**, PIN **1234** (digitado no tablet).
 
 ✔ **Conferir:** total da Mesa 3 **R$ 37,00**.
 
 ---
 
-## 5. Transferir uma mesa e juntar duas (celular)
+## 5. Transferir uma mesa e juntar duas (tablet)
 
 1. Mesa 4 → **Transferir** → mesa **6**.
 2. Mesa 2 → **Juntar mesas** → **Mesa 3** (ocupada).
@@ -110,7 +106,7 @@ Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é p
 
 ---
 
-## 6. Conta pedida (celular)
+## 6. Conta pedida (tablet)
 
 1. Mesa 1 → **Conta pedida**.
 
@@ -120,10 +116,10 @@ Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é p
 
 ## 7. Pagamento parcial em duas formas, com troco (Mesa 1)
 
-1. Celular: Mesa 1 → **Fechar Conta**.
+1. Tablet: Mesa 1 → **Fechar Conta**.
 
    ✔ Total **R$ 60,00**; Por pessoa (2 pessoas) **R$ 30,00**.
-2. Celular: **PIX**, botão "1 pessoa R$ 30,00" → Confirmar.
+2. Tablet: **PIX**, botão "1 pessoa R$ 30,00" → Confirmar.
 
    ✔ No PC, na tela de pagamento da Mesa 1: Já pago **R$ 30,00**, Falta pagar **R$ 30,00**.
 3. PC: **Dinheiro**, valor **30,00**, dinheiro recebido **50,00** → Confirmar.
@@ -159,7 +155,7 @@ Lance um toque por unidade (4× = tocar 4 vezes no produto). A observação é p
 4. Menu → **Configurações** → **desligar** o desconto (PIN 1234).
 
    ✔ No pagamento de Mesas 2 + 3, o botão "Dar desconto" **sumiu**, mas o desconto de R$ 9,00 já lançado **continua** na conta.
-5. Celular: Mesas 2 + 3 → Fechar Conta → **Débito 40,00** (duas pessoas pagaram a parte delas).
+5. Tablet: Mesas 2 + 3 → Fechar Conta → **Débito 40,00** (duas pessoas pagaram a parte delas).
 
 ✔ **Conferir no PC:** Já pago **R$ 40,00**, Falta pagar **R$ 60,00**.
 
@@ -188,19 +184,21 @@ O dinheiro é 100 (fundo) + 30 (Mesa 1) + 50 (suprimento) − 30 (sangria). O d�
 2. PC: Produtos → **Brahma Lata** → **Perda** → **1**, motivo **Lata amassada** → PIN 1234.
 
    ✔ Estoque **75** (76 − 1).
-3. Celular: abra a comanda do **Balcão — Diego**, aba Cardápio, categoria Lanche.
+3. Tablet: abra a comanda do **Balcão — Diego**, aba Cardápio, categoria Lanche.
 
    ✔ **Misto Quente** aparece no cardápio.
 4. PC: Produtos → **Misto Quente** → **Desativar** → PIN 1234.
 
-✔ **Conferir no celular**, sem tocar em nada: em até 5 segundos a tela se recarrega e o **Misto Quente some** do cardápio.
+✔ **Conferir no tablet**, sem tocar em nada: em até 5 segundos a tela se recarrega e o **Misto Quente some** do cardápio.
 
 ---
 
 ## 12. Reiniciar o servidor no meio da noite
 
-1. PC: na janela do servidor, **Ctrl+C**. Espere uns segundos (o celular pode mostrar falha de conexão).
-2. `python servidor.py` de novo.
+1. PC: na janela do servidor, **Parar o servidor** → Sim. Espere uns segundos (o tablet pode mostrar falha de conexão).
+2. Abra de novo pelo atalho **Tucandeira Rock Bar** da Área de Trabalho.
+
+   ✔ A janela do servidor mostra o mesmo endereço e "Último backup" com a hora de agora (o backup é feito ao abrir).
 
 ✔ **Conferir**, sem fazer login de novo nos dois aparelhos:
 - Mesas ocupadas: **2, 3 e 6**.
@@ -210,9 +208,9 @@ O dinheiro é 100 (fundo) + 30 (Mesa 1) + 50 (suprimento) − 30 (sangria). O d�
 
 ---
 
-## 13. Contingência: celular sem Wi-Fi, só o PC
+## 13. Contingência: tablet sem Wi-Fi, só o PC
 
-1. **Desligue o Wi-Fi do celular.** Daqui em diante, tudo é feito só pelo PC.
+1. **Desligue o Wi-Fi do tablet.** Daqui em diante, tudo é feito só pelo PC.
 2. PC: Balcão — Diego → lance **1× Água sem Gás** → total **R$ 36,00** → **PIX 36,00**.
 3. PC: Mesa 6 → lance **+1 Brahma Lata** → total **R$ 40,00** → **Dinheiro 40,00**, recebido **50,00**.
 
@@ -228,7 +226,7 @@ O dinheiro é 100 (fundo) + 30 (Mesa 1) + 50 (suprimento) − 30 (sangria). O d�
   | **R$ 190,00** | **R$ 40,00** | **R$ 94,00** | **R$ 66,00** |
 
 - Estoque: Brahma Lata **70**, Heineken Long Neck **46**, Caipirinha **11**, X-Burguer **4** (o cancelado não baixa), Original 600ml **6** (o removido não baixa), Misto Quente **5** (desativado).
-5. Religue o Wi-Fi do celular.
+5. Religue o Wi-Fi do tablet.
 
    ✔ A tela de mesas volta a atualizar e mostra tudo livre.
 
@@ -286,7 +284,7 @@ O X-Burguer cancelado e o Original 600ml removido **não** aparecem.
 
 ✔ **Descontos:** 1 linha, **R$ 9,00** · Mesas 2 + 3 · Demora na cozinha · lançado e autorizado por Gerente Demo.
 
-✔ **Estoque em alerta** (situação de agora): Lucky Strike 20un (-4) e Mandioca Frita (-2) com **estoque negativo**; Gin Tônica e Isqueiro **sem estoque**; Isca de Peixe, Original 600ml, Whisky 50ml e X-Burguer **abaixo do mínimo**. O Misto Quente, desativado, não aparece.
+✔ **Estoque em alerta** (situação de agora): só **Original 600ml** (6, mínimo 12) e **X-Burguer** (4, mínimo 5), **abaixo do mínimo**. O Misto Quente, desativado, não aparece.
 
 ✔ **Fechamentos de caixa:** o caixa de hoje com Dinheiro **-R$ 2,00 faltou** e Diferença total **-R$ 2,00**.
 
@@ -321,4 +319,10 @@ O X-Burguer cancelado e o Original 600ml removido **não** aparecem.
 | 14. Fechar o caixa | | |
 | 15. Relatórios e CSV | | |
 
-Para repetir a validação do zero: `python scripts/popular_demo.py --recriar --sem-movimento-hoje` (guarda um backup do banco anterior).
+Para repetir a validação do zero: `COMECAR_BANCO_LIMPO.bat` e volte ao passo 0.
+
+## Depois da validação
+
+1. Dois cliques em **`COMECAR_BANCO_LIMPO.bat`** e digite **LIMPAR**: o banco da validação vai para `C:\TucandeiraBar\dados\validacao_<data e hora>\` e o sistema recomeça vazio.
+2. Crie o gerente de verdade (com um PIN que só o dono saiba), cadastre os garçons e importe o cardápio do bar (`modelo_cardapio.csv` preenchido pelo dono).
+3. Os usuários **Gerente Demo** e **Ana** e os PINs 1234 e 1111 **não** existem mais e nunca devem ser recriados no bar.

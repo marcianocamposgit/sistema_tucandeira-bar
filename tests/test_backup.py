@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from database import conectar, migrar
-from services.backup import fazer_backup, listar_backups
+from services.backup import backup_se_preciso, fazer_backup, listar_backups, ultimo_backup
 
 
 def _criar_banco(caminho):
@@ -57,3 +57,16 @@ def test_rotacao_nao_apaga_outros_arquivos(tmp_path):
         fazer_backup(banco, pasta, manter=1, momento=datetime(2026, 10, 14, 20, 0, segundo))
     assert (pasta / "copia_manual.db").exists()
     assert len(listar_backups(pasta)) == 1
+
+
+def test_backup_diario_enquanto_o_servidor_roda(tmp_path):
+    banco = tmp_path / "tucandeira.db"
+    _criar_banco(banco)
+    pasta = tmp_path / "backups"
+    assert ultimo_backup(pasta) is None
+    inicio = datetime(2026, 10, 14, 18, 0, 0)
+    assert backup_se_preciso(banco, pasta, momento=inicio) is not None  # nenhum ainda: faz
+    assert backup_se_preciso(banco, pasta, momento=inicio + timedelta(hours=23, minutes=59)) is None
+    feito = backup_se_preciso(banco, pasta, momento=inicio + timedelta(hours=24))
+    assert feito.name == "tucandeira_2026-10-15_18-00-00.db"
+    assert ultimo_backup(pasta) == (datetime(2026, 10, 15, 18, 0, 0), feito)

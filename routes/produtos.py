@@ -6,12 +6,14 @@
 - Cadastrar, editar, desativar e reativar produtos e categorias pedem a
   autorização do gerente na hora; perda e ajuste de contagem pedem motivo e gerente.
 - Histórico por produto: entradas, perdas, ajustes e baixas por venda.
+- Importar planilha: baixar o modelo (cardápio atual), enviar o CSV preenchido,
+  conferir linha a linha e gravar com a autorização do gerente.
 """
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, g, redirect, render_template, request, url_for
 
 from routes.conexao import obter_conexao
 from routes.seguranca import autorizacao_do_formulario, login_obrigatorio
-from services import produtos
+from services import importacao, produtos
 from services.erros import DadosInvalidosError, ErroDeNegocio, NaoEncontradoError
 from services.formatacao import formatar_valor_campo, ler_inteiro, ler_moeda, plural, valor_para_campo
 
@@ -230,3 +232,55 @@ def categorias():
     ativos = {c.id: plural(sum(1 for p in todos if p.categoria_id == c.id), "produto ativo", "produtos ativos")
               for c in lista_categorias}
     return render_template("produtos/categorias.html", categorias=lista_categorias, ativos=ativos)
+
+
+# ============================================================
+# IMPORTAR PLANILHA DO CARDÁPIO
+# ============================================================
+@bp.route("/importar")
+@login_obrigatorio
+def importar():
+    return render_template("produtos/importar.html", conferencia=None)
+
+
+@bp.route("/importar/modelo")
+@login_obrigatorio
+def modelo_planilha():
+    return Response(
+        importacao.modelo_csv(obter_conexao()).encode("utf-8"),
+        mimetype="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="cardapio_tucandeira.csv"'},
+    )
+
+
+@bp.route("/importar/conferir", methods=["POST"])
+@login_obrigatorio
+def conferir_planilha():
+    """Passo 1: lê o arquivo e mostra a conferência (nada é gravado)."""
+    arquivo = request.files.get("planilha")
+    try:
+        texto = importacao.ler_arquivo(arquivo.read() if arquivo else b"")
+    except ErroDeNegocio as erro:
+        flash(str(erro), "erro")
+        return redirect(url_for("produtos.importar"))
+    return render_template("produtos/importar.html", texto=texto,
+                           nome_arquivo=arquivo.filename if arquivo else "",
+                           conferencia=importacao.conferir(obter_conexao(), texto))
+
+
+@bp.route("/importar/gravar", methods=["POST"])
+@login_obrigatorio
+def gravar_planilha():
+    """Passo 2: grava (a conferência é refeita dentro da transação)."""
+    texto = request.form.get("texto", "")
+    conexao = obter_conexao()
+    try:
+        resultado = importacao.importar(conexao, texto, g.usuario.id, autorizacao_do_formulario(),
+                                        desativar_ausentes=request.form.get("desativar_ausentes") == "1")
+    except ErroDeNegocio as erro:
+        flash(str(erro), "erro")
+        return render_template("produtos/importar.html", texto=texto,
+                               nome_arquivo=request.form.get("nome_arquivo", ""),
+                               conferencia=importacao.conferir(conexao, texto))
+    flash(importacao.resumo_resultado(resultado), "sucesso")
+    return redirect(url_for("produtos.lista"))

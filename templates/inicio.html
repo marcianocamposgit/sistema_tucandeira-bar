@@ -16,5 +16,8 @@
         {% endif %}
     </div>
     <p class="subtitulo rodape-versao">Sistema de Gestão — versão {{ versao }}</p>
+    <div class="rodape-acoes">
+        <a class="botao botao-secundario" href="{{ url_for('sistema.sobre') }}">Sobre e backup</a>
+    </div>
 </section>
 {% endblock %}

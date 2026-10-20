@@ -66,7 +66,9 @@ Falhas do legado que a versão web não pode repetir:
 ```
 tucandeira-bar/
 ├── app.py               # cria o app Flask (create_app), registra blueprints; roda o servidor de desenvolvimento
-├── servidor.py          # inicia o app com waitress (produção, rede local)
+├── servidor.py          # inicia o app com waitress (produção, rede local); é também o TucandeiraBar.exe
+├── janela_servidor.py   # janela do servidor (Tkinter, sem console): endereços, último backup, parar
+├── TucandeiraBar.spec   # receita do PyInstaller (onefile, console=False)
 ├── config.py            # NUM_MESAS, PORTA, prazos, formas de pagamento, tempo de sessão, caminhos (pathlib)
 ├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial
 ├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
@@ -81,7 +83,9 @@ tucandeira-bar/
 │   ├── configuracoes.py # configurações do bar (ex.: permitir desconto)
 │   ├── formatacao.py    # formatar_moeda()
 │   ├── relatorios.py
-│   └── backup.py
+│   ├── importacao.py    # importação do cardápio por planilha CSV (conferência + gravação numa transação)
+│   ├── rede.py          # IPs desta máquina (endereços para os tablets)
+│   └── backup.py        # backup ao iniciar, diário (backup_se_preciso) e "Fazer backup agora"
 ├── routes/              # blueprints Flask: recebem a requisição, chamam services, devolvem HTML/JSON
 │   ├── seguranca.py     # sessão, expiração, CSRF, @login_obrigatorio, autorização de gerente do formulário
 │   ├── auth.py          # primeiro acesso, login (nome + PIN), trocar usuário, trocar meu PIN
@@ -90,6 +94,7 @@ tucandeira-bar/
 │   ├── pagamentos.py
 │   ├── produtos.py
 │   ├── relatorios.py
+│   ├── sistema.py       # tela "Sobre" (versão, endereços, backup)
 │   └── usuarios.py
 ├── templates/           # Jinja2 (base.html com o layout comum)
 ├── static/
@@ -103,7 +108,8 @@ tucandeira-bar/
 ├── assets/logo.png      # logo original
 ├── data/tucandeira.db   # banco (não versionar)
 ├── data/backups/        # backups automáticos (não versionar)
-├── scripts/            # utilitários: gerar_imagens.py, popular_demo.py, scripts .ps1 de instalação
+├── scripts/             # gerar_imagens.py, popular_demo.py, gerar_exe.ps1, montar_entrega.py, instalar/atualizar/firewall (.ps1 + .bat)
+├── VALIDACAO.md         # roteiro da noite de validação no bar (+ validacao_cardapio.csv)
 ├── legado_tkinter/      # versão antiga, só referência
 └── tests/               # pytest para os services (e alguns testes de rotas com o test client do Flask)
 ```
@@ -225,7 +231,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - **Mesas:** status livre, ocupada e "conta pedida" (cores diferentes); número de pessoas na mesa; transferir comanda para outra mesa; juntar mesas.
 - **Comandas:** balcão com várias comandas abertas, identificadas pelo nome do cliente; adicionar e remover itens; observação por item; cancelamento de item já lançado exige motivo e PIN de gerente e fica registrado; cancelamento da comanda inteira (regra acima).
 - **Pagamento:** preço de tabela, sem taxa de serviço nem couvert; desconto opcional só em R$ (regra acima); dividir entre formas de pagamento; pagamento parcial com total, já pago e saldo; estorno de pagamento; mostrar o valor dividido igualmente por pessoa; cálculo de troco em dinheiro.
-- **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; movimentos de estoque registrados (entrada de mercadoria, perda, ajuste de contagem).
+- **Produtos e estoque:** cadastrar, editar, desativar; categorias editáveis; estoque mínimo por produto, com alerta; movimentos de estoque registrados (entrada de mercadoria, perda, ajuste de contagem); importação do cardápio por planilha CSV (modelo com o cardápio atual, conferência linha a linha antes de gravar, PIN do gerente).
 - **Relatórios:** vendas por período (dia, semana, mês, intervalo personalizado); total por forma de pagamento; produtos mais vendidos; cancelamentos e descontos com responsável e motivo; produtos com estoque negativo ou abaixo do mínimo; histórico de fechamentos de caixa; exportar para CSV.
 - **Segurança dos dados:** backup automático do banco ao iniciar o servidor (e uma vez por dia enquanto ele estiver rodando), mantendo os 7 últimos.
 - **Dados de demonstração:** comando separado (`python scripts/popular_demo.py`) que popula o banco de desenvolvimento com usuários, produtos e dias de caixas e vendas no passado, para testar telas e relatórios. Recusa-se a rodar se o banco não for o de desenvolvimento.
@@ -236,7 +242,7 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
   - Pacote de instalação com PyInstaller: um `TucandeiraBar.exe` do servidor (waitress + Flask, com templates, static e assets embutidos), que roda sem Python instalado no computador do bar.
   - Banco, backups, `secret_key` e logs numa pasta de dados separada do programa (`C:\TucandeiraBar\dados\`). Atualizar o sistema é só trocar o executável (`C:\TucandeiraBar\programa\TucandeiraBar.exe`), sem tocar nos dados; o banco é migrado automaticamente (`PRAGMA user_version`) depois de um backup.
   - O servidor inicia junto com o Windows.
-  - Ao iniciar, mostra na tela o endereço completo para digitar nos tablets e celulares (ex.: `http://192.168.0.10:5000`).
+  - Ao iniciar, mostra na tela o endereço completo para digitar nos tablets e celulares (ex.: `http://192.168.0.10:5000`), numa janela própria (Tkinter), sem depender de janela de console (que trava com um clique no modo QuickEdit).
   - README com o passo a passo de instalação e de atualização.
 
 ### Versão 2.1 (futuro — NÃO implementar agora)
