@@ -114,6 +114,16 @@ def test_ultimo_caixa_fechado_define_o_hoje(conexao, movimento):
     assert relatorios.dia_de_operacao(conexao, date(2026, 10, 16)) == DIA_14
 
 
+def test_semana_e_mes_seguem_o_calendario():
+    # Segunda, 19/10, à 01:00: o caixa aberto é o de domingo (dia de operação 18/10).
+    segunda, domingo = date(2026, 10, 19), date(2026, 10, 18)
+    assert relatorios.periodo("dia", segunda, dia_operacao=domingo) == relatorios.Periodo(domingo, domingo, "dia")
+    semana = relatorios.periodo("semana", segunda, dia_operacao=domingo)
+    assert (semana.inicio, semana.fim) == (segunda, segunda)
+    primeiro = relatorios.periodo("mes", date(2026, 11, 1), dia_operacao=date(2026, 10, 31))
+    assert (primeiro.inicio, primeiro.fim) == (date(2026, 11, 1), date(2026, 11, 1))
+
+
 def test_cancelamentos_e_descontos_com_responsavel(conexao, movimento):
     dia14 = relatorios.periodo("dia", DIA_14)
     ocorrencias = relatorios.cancelamentos(conexao, dia14)

@@ -6,6 +6,7 @@ Regras:
   fechamento conta no dia em que o caixa dele foi aberto (uma venda à 01:00 entra
   na noite anterior). Inclui o dia inicial e o final. Nunca é o total geral.
 - "Hoje" é a noite do caixa aberto (ou do último fechado, se não houver caixa aberto).
+  "Esta semana" (segunda até hoje) e "Este mês" (dia 1º até hoje) seguem o calendário.
 - O total por forma soma os pagamentos não estornados das vendas do período;
   assim, a soma das formas é sempre igual ao total vendido.
 - Comandas abertas ou canceladas não entram nas vendas.
@@ -31,12 +32,14 @@ FORMATO_DATA = "%Y-%m-%d"
 # ============================================================
 # PERÍODO
 # ============================================================
-def periodo(tipo, hoje=None, de=None, ate=None):
-    """Monta o período: 'dia' (hoje), 'semana' (de segunda até hoje), 'mes' (do dia 1
-    até hoje) ou 'intervalo' (de/até digitados, no formato AAAA-MM-DD do seletor de data)."""
+def periodo(tipo, hoje=None, de=None, ate=None, dia_operacao=None):
+    """Monta o período: 'dia' (o dia de operação), 'semana' (de segunda até hoje), 'mes'
+    (do dia 1 até hoje) ou 'intervalo' (de/até digitados, no formato AAAA-MM-DD do seletor
+    de data). `hoje` é a data do calendário; `dia_operacao`, a de dia_de_operacao()."""
     hoje = hoje or date.today()
     if tipo == "dia":
-        return Periodo(hoje, hoje, tipo)
+        dia = dia_operacao or hoje
+        return Periodo(dia, dia, tipo)
     if tipo == "semana":
         return Periodo(hoje - timedelta(days=hoje.weekday()), hoje, tipo)
     if tipo == "mes":
