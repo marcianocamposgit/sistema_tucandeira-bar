@@ -1,31 +1,31 @@
-# Validação no bar — uma noite completa de expediente
+# Validação completa — uma noite de expediente simulada (ensaio em casa)
 
-Roteiro para executar **no bar, com o sistema já instalado** (`INSTALAR.bat`, veja o README) e **antes de começar a vender de verdade**, simulando uma noite inteira com dois aparelhos:
+Roteiro opcional para o **ensaio em casa** (veja o `INSTALACAO_BAR.md`), com o sistema instalado pelo `INSTALAR.bat` num computador de teste, simulando uma noite inteira com dois aparelhos. **Não faz parte da instalação no bar** (decisão de 24/10/2026) e não vai no pacote de entrega: fica só no repositório, junto com o `validacao_cardapio.csv`.
 
 | Aparelho | Quem | Endereço |
 |---|---|---|
 | PC servidor (caixa) | **Gerente Demo** (PIN 1234) | `http://localhost:5000` |
 | Tablet (garçom) | **Ana** (PIN 1111) | o endereço da janela do servidor, ex.: `http://192.168.0.10:5000` |
 
-Os usuários e o cardápio desta noite são só para a validação: no fim, o banco inteiro é guardado à parte com o `COMECAR_BANCO_LIMPO.bat` e o bar começa do zero, com os usuários e o cardápio de verdade.
+Os usuários e o cardápio desta noite são só para o ensaio: no fim, o banco inteiro é guardado à parte com o `COMECAR_BANCO_LIMPO.bat` (ou apagado com o `DESINSTALAR.bat` + **APAGAR**).
 
 Siga os passos **na ordem**. Cada **✔ Conferir** traz o valor que deve aparecer na tela. Se algo não bater, anote o número do passo e o que apareceu, e continue se der.
 
-> Este roteiro foi executado pelo cliente de teste do Flask, num banco de produção novo, em 19/10/2026 (preparação com a planilha, a noite inteira e os relatórios): **todos os valores conferiram**. O tablet real, o Wi-Fi do bar e o Excel ficam para conferir aqui.
+> Este roteiro foi executado pelo cliente de teste do Flask, num banco de produção novo, em 19/10/2026 (preparação com a planilha, a noite inteira e os relatórios): **todos os valores conferiram**. Em 24/10/2026 o passo 0 foi ajustado para o banco novo sem cardápio (a instalação começa zerada).
 
 ---
 
 ## 0. Preparação
 
-1. O servidor está aberto (janela verde "Tucandeira Rock Bar — Servidor") e o banco está **novo**, sem nenhum usuário. Se já foi usado, rode antes o `COMECAR_BANCO_LIMPO.bat`.
+1. O servidor está aberto (janela verde "Tucandeira Rock Bar — Servidor") e o banco está **novo**, sem nenhum usuário. Se já foi usado, rode antes o `COMECAR_BANCO_LIMPO.bat`. O banco novo não tem nenhum produto nem categoria.
 2. **PC:** no navegador (`http://localhost:5000`), o sistema pede o primeiro acesso: crie o gerente **Gerente Demo** com PIN **1234**.
 3. **PC:** Usuários → cadastrar **Ana**, perfil **Operador**, PIN **1111** (autorize com Gerente Demo, 1234).
-4. **PC:** Produtos → **Importar planilha** → envie o arquivo **`validacao_cardapio.csv`** (está na pasta de entrega) → **Conferir planilha**.
+4. **PC:** Produtos → **Importar planilha** → envie o arquivo **`validacao_cardapio.csv`** (está na raiz do repositório) → **Conferir planilha**.
 
-   ✔ **Conferir:** Novos **8**, Alterados **5**, Sem mudança **0**, Com erro **0**; os 5 alterados são os produtos de exemplo que já vêm no banco (estoque e mínimo mudam); aparece a opção de desativar **1 produto** que não está na planilha: **Whisky 50ml**.
-5. Marque **Desativar 1 produto que não está na planilha** → **Gravar no cardápio** → Gerente Demo, PIN 1234.
+   ✔ **Conferir:** Novos **13**, Alterados **0**, Sem mudança **0**, Com erro **0**; categorias novas: **Bebida, Tira-Gosto, Lanche, Cigarro**; nenhum produto para desativar.
+5. **Gravar no cardápio** → Gerente Demo, PIN 1234.
 
-   ✔ **Conferir:** mensagem **"Cardápio importado: 8 produtos novos, 5 produtos alterados, 1 produto desativado."** e, em Produtos, este estoque:
+   ✔ **Conferir:** mensagem **"Cardápio importado: 13 produtos novos, 4 categorias novas."** e, em Produtos, este estoque:
 
    | Produto | Estoque |
    |---|---|
@@ -321,8 +321,8 @@ O X-Burguer cancelado e o Original 600ml removido **não** aparecem.
 
 Para repetir a validação do zero: `COMECAR_BANCO_LIMPO.bat` e volte ao passo 0.
 
-## Depois da validação
+## Depois do ensaio
 
-1. Dois cliques em **`COMECAR_BANCO_LIMPO.bat`** e digite **LIMPAR**: o banco da validação vai para `C:\TucandeiraBar\dados\validacao_<data e hora>\` e o sistema recomeça vazio.
-2. Crie o gerente de verdade (com um PIN que só o dono saiba), cadastre os garçons e importe o cardápio do bar (`modelo_cardapio.csv` preenchido pelo dono).
+1. Dois cliques em **`COMECAR_BANCO_LIMPO.bat`** e digite **LIMPAR**: o banco do ensaio vai para `C:\TucandeiraBar\dados\testes_<data e hora>\` e o sistema recomeça vazio.
+2. Siga o `INSTALACAO_BAR.md` (fim do ensaio em casa, com o `DESINSTALAR.bat`).
 3. Os usuários **Gerente Demo** e **Ana** e os PINs 1234 e 1111 **não** existem mais e nunca devem ser recriados no bar.

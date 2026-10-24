@@ -6,11 +6,14 @@ Cria dist/TucandeiraBar-<versão>/ e dist/TucandeiraBar-<versão>.zip com:
     TucandeiraBar.exe            o servidor (roda sem Python)
     INSTALAR.bat                 instala no computador do bar (pede administrador)
     ATUALIZAR.bat                troca o programa por uma versão nova (os dados ficam)
-    COMECAR_BANCO_LIMPO.bat      guarda o banco da validação e começa do zero
+    COMECAR_BANCO_LIMPO.bat      guarda o banco dos testes e começa do zero (opcional)
     DESINSTALAR.bat              remove o programa (os dados ficam, a menos que se confirme)
     scripts .ps1                 usados pelos .bat (firewall, início com o Windows...)
-    modelo_cardapio.csv          planilha do cardápio para o dono preencher
-    README.md e VALIDACAO.md     instruções
+    modelo_cardapio.csv          planilha do cardápio (só o cabeçalho) para o dono preencher
+    README.md                    instruções
+    INSTALACAO_BAR.md            ensaio em casa, instalação no bar e treinamento
+
+O VALIDACAO.md e o validacao_cardapio.csv ficam só no repositório (ensaio em casa).
 """
 import shutil
 import sys
@@ -33,7 +36,7 @@ ARQUIVOS_SCRIPTS = ["INSTALAR.bat", "ATUALIZAR.bat", "COMECAR_BANCO_LIMPO.bat", 
 
 
 def modelo_cardapio():
-    """O modelo da planilha com o cardápio inicial (o mesmo de um banco novo)."""
+    """O modelo da planilha de um banco novo do bar: só o cabeçalho, pois a instalação começa sem cardápio."""
     with tempfile.TemporaryDirectory() as pasta:
         conexao = conectar(Path(pasta) / "modelo.db")
         try:
@@ -57,7 +60,7 @@ def main():
     shutil.copy2(executavel, destino)
     for arquivo in ARQUIVOS_SCRIPTS:
         shutil.copy2(SCRIPTS / arquivo, destino)
-    for arquivo in ("README.md", "VALIDACAO.md", "validacao_cardapio.csv"):
+    for arquivo in ("README.md", "INSTALACAO_BAR.md"):
         shutil.copy2(RAIZ / arquivo, destino)
     (destino / "modelo_cardapio.csv").write_bytes(modelo_cardapio().encode("utf-8"))
 

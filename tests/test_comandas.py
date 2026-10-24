@@ -261,7 +261,7 @@ def test_dois_aparelhos_lancando_na_mesma_comanda(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "ITERACOES_PIN", 1000)
     caminho = tmp_path / "concorrencia.db"
     con = conectar(caminho)
-    migrar(con)
+    migrar(con, "desenvolvimento")
     garcom = usuarios.criar_gerente_inicial(con, "Garçom", "1234")
     caixa.abrir(con, 0, garcom.id)
     comanda_id = comandas.abrir_mesa(con, 1, garcom.id).id
@@ -298,7 +298,7 @@ def test_dois_aparelhos_abrindo_a_mesma_mesa(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "ITERACOES_PIN", 1000)
     caminho = tmp_path / "mesa.db"
     con = conectar(caminho)
-    migrar(con)
+    migrar(con, "desenvolvimento")
     garcom = usuarios.criar_gerente_inicial(con, "Garçom", "1234")
     caixa.abrir(con, 0, garcom.id)
     con.close()

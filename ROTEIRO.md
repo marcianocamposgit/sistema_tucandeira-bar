@@ -8,7 +8,7 @@ Cada etapa tem um prompt pronto para colar no Claude Code. Faça uma de cada vez
 - Os services são escritos e testados antes das telas; as rotas só chamam services.
 - Usuários vêm antes de tudo que grava operação, porque toda operação registra quem fez.
 - O caixa vem antes das comandas, porque só se vende com caixa aberto.
-- A tela de produtos vem depois do pagamento porque o cardápio inicial já é carregado no banco na Etapa 1 — dá para vender antes de ter o gerenciador de produtos.
+- A tela de produtos vem depois do pagamento porque o cardápio inicial já é carregado no banco na Etapa 1 (hoje só no banco de desenvolvimento; veja "Entrega no bar") — dá para vender antes de ter o gerenciador de produtos.
 
 ---
 
@@ -168,6 +168,21 @@ Relatórios (`services/relatorios.py`, `routes/relatorios.py`, `templates/relato
 **Teste:** num computador **sem Python instalado**, instalar seguindo o README e rodar o `TucandeiraBar.exe`; conferir que o banco, os backups e a secret_key foram criados em `C:\TucandeiraBar\dados\` e nada foi gravado ao lado do executável; conferir que a janela mostra o endereço `http://<IP>:<porta>` e acessá-lo pelo tablet e por um celular; reiniciar o computador e, sem abrir nada manualmente, acessar pelo tablet; simular uma atualização trocando o `.exe` por uma versão nova seguindo o README e conferir que os dados continuam lá; conferir o backup do dia na pasta de backups; restaurar um backup numa cópia seguindo o README; atendimento completo: login, abrir o caixa, vender em duas mesas e no balcão, fechar o caixa e ver o relatório.
 
 **Teste no PC (mouse e teclado):** no computador do bar com o executável instalado e o cabo de rede/Wi-Fi desconectado, abrir `http://localhost:5000` e repetir o atendimento completo só com mouse e teclado.
+
+---
+
+## Entrega no bar ✅ pacote pronto (decisões de 24/10/2026)
+
+**Decisões:**
+
+1. **Instalação 100% zerada:** o banco criado pelo executável (ambiente `producao`) nasce sem usuários, sem vendas e **sem nenhum produto ou categoria**. O primeiro acesso cria o gerente e o cardápio entra só pela importação da planilha do dono. A carga inicial dos 6 produtos e 4 categorias do legado continua só no banco de desenvolvimento (`_migracao_1` com `ambiente == "desenvolvimento"`; bancos já existentes não mudam). O `modelo_cardapio.csv` do pacote vem só com o cabeçalho.
+2. **Sem noite de validação no bar:** `VALIDACAO.md` e `validacao_cardapio.csv` saem do pacote de entrega e ficam no repositório, para um ensaio em casa (o passo 0 foi ajustado ao banco vazio: 13 produtos novos e 4 categorias novas). O `COMECAR_BANCO_LIMPO.bat` fica no pacote como opcional, só se houver testes no computador do bar antes da primeira venda (guarda o banco em `dados/testes_<data>/`).
+
+**Plano** (passo a passo no `INSTALACAO_BAR.md`, que vai no pacote):
+
+1. **Ensaio no notebook:** `INSTALAR.bat`, primeiro acesso, importar uma planilha de teste, uma venda simples, `COMECAR_BANCO_LIMPO.bat` e `DESINSTALAR.bat` com **APAGAR**.
+2. **Instalação no bar:** `INSTALAR.bat`, rede privada, IP fixo no roteador, teste no tablet, gerente real, importação do cardápio do dono, cadastro dos garçons e abertura do caixa.
+3. **Treinamento rápido** da equipe (garçons e gerente).
 
 ---
 

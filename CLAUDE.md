@@ -49,7 +49,7 @@ Dependências: Python 3.14 (instalado: 3.14.4), Flask, waitress, Pillow (gerar �
 
 ## Versão antiga (Tkinter) — só referência
 
-A versão desktop em Tkinter foi preservada na tag git `v1.0-tkinter` e os arquivos estão em `legado_tkinter/` (`main.py` e `views/`). **Não alterar nem importar nada dessa pasta.** Ela serve apenas como referência do cardápio inicial (6 produtos e 4 categorias, em `legado_tkinter/main.py`) e do comportamento original.
+A versão desktop em Tkinter foi preservada na tag git `v1.0-tkinter` e os arquivos estão em `legado_tkinter/` (`main.py` e `views/`). **Não alterar nem importar nada dessa pasta.** Ela serve apenas como referência do cardápio inicial (6 produtos e 4 categorias, em `legado_tkinter/main.py`, carregados só no banco de desenvolvimento) e do comportamento original.
 
 Falhas do legado que a versão web não pode repetir:
 
@@ -70,7 +70,7 @@ tucandeira-bar/
 ├── janela_servidor.py   # janela do servidor (Tkinter, sem console): endereços, último backup, parar
 ├── TucandeiraBar.spec   # receita do PyInstaller (onefile, console=False)
 ├── config.py            # NUM_MESAS, PORTA, prazos, formas de pagamento, tempo de sessão, caminhos (pathlib)
-├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial
+├── database.py          # conexão SQLite (WAL), transações, criação/migração das tabelas, carga inicial (só desenvolvimento)
 ├── models/              # dataclasses: Usuario, Produto, Categoria, Comanda, ItemComanda, Venda, ItemVenda, Pagamento, Caixa...
 ├── services/            # regras de negócio, SEM nenhum import de Flask
 │   ├── erros.py         # exceções de regra de negócio (mensagens prontas em português)
@@ -109,7 +109,8 @@ tucandeira-bar/
 ├── data/tucandeira.db   # banco (não versionar)
 ├── data/backups/        # backups automáticos (não versionar)
 ├── scripts/             # gerar_imagens.py, popular_demo.py, gerar_exe.ps1, montar_entrega.py, instalar/atualizar/firewall (.ps1 + .bat)
-├── VALIDACAO.md         # roteiro da noite de validação no bar (+ validacao_cardapio.csv)
+├── INSTALACAO_BAR.md    # ensaio em casa, instalação no bar, o que levar e treinamento (vai no pacote)
+├── VALIDACAO.md         # validação completa opcional para o ensaio em casa (+ validacao_cardapio.csv); fora do pacote
 ├── legado_tkinter/      # versão antiga, só referência
 └── tests/               # pytest para os services (e alguns testes de rotas com o test client do Flask)
 ```
@@ -221,6 +222,8 @@ O esquema completo está em `database.py` (`ESQUEMA_V1`). Pontos que guiam os se
 - **Balcão:** não pode haver duas comandas de balcão abertas com o mesmo nome de cliente (ex.: usar "João 2").
 - **Aviso de estoque ao lançar:** considera o estoque menos o que já está lançado nas comandas abertas (o estoque só baixa no pagamento).
 - **Transferir mesa junta:** transfere só a mesa escolhida; as outras mesas continuam juntas na mesma comanda.
+- **Instalação no bar 100% zerada (24/10/2026):** o banco de produção (criado pelo executável) nasce sem usuários, sem vendas e sem nenhum produto ou categoria. O primeiro acesso cria o gerente e o cardápio entra só pela importação da planilha do dono. A carga inicial do cardápio do legado existe só no banco de desenvolvimento. O `modelo_cardapio.csv` do pacote vem só com o cabeçalho.
+- **Sem noite de validação no bar (24/10/2026):** `VALIDACAO.md` e `validacao_cardapio.csv` ficam só no repositório, para o ensaio em casa, e não vão no pacote de entrega. O plano é: ensaio no notebook → instalação no bar → treinamento rápido da equipe, tudo descrito no `INSTALACAO_BAR.md` (que vai no pacote). O `COMECAR_BANCO_LIMPO.bat` é opcional: só se houver testes no computador do bar antes da primeira venda.
 
 ## Requisitos do sistema
 

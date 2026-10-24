@@ -111,10 +111,15 @@ def test_importar_exige_gerente(conexao, operador):
     assert "Skol Lata" not in [p.nome for p in produtos.listar_produtos(conexao)]
 
 
-def test_planilha_da_validacao_no_banco_novo(conexao):
-    """O VALIDACAO.md depende destes números (passo 0)."""
+def test_planilha_da_validacao_no_banco_novo(tmp_path):
+    """O VALIDACAO.md depende destes números (passo 0): banco de produção novo, sem cardápio."""
     from pathlib import Path
+    from database import conectar, migrar
+    con = conectar(tmp_path / "producao.db")
+    migrar(con, "producao")
     texto = importacao.ler_arquivo((Path(__file__).resolve().parent.parent / "validacao_cardapio.csv").read_bytes())
-    conferencia = importacao.conferir(conexao, texto)
-    assert (conferencia.novos, conferencia.alterados, conferencia.iguais, conferencia.com_erro) == (8, 5, 0, 0)
-    assert conferencia.ausentes == ["Whisky 50ml"] and conferencia.categorias_novas == []
+    conferencia = importacao.conferir(con, texto)
+    con.close()
+    assert (conferencia.novos, conferencia.alterados, conferencia.iguais, conferencia.com_erro) == (13, 0, 0, 0)
+    assert conferencia.ausentes == []
+    assert conferencia.categorias_novas == ["Bebida", "Tira-Gosto", "Lanche", "Cigarro"]

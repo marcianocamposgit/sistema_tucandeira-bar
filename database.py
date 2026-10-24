@@ -273,6 +273,8 @@ CREATE INDEX idx_itens_venda_produto ON itens_venda(produto_id);
 """
 
 # Carga inicial: cardápio da versão antiga (legado_tkinter/main.py), valores copiados.
+# Só no banco de desenvolvimento: a instalação no bar começa sem nenhum produto nem
+# categoria, e o cardápio entra pela importação da planilha do dono (decisão de 24/10/2026).
 CATEGORIAS_INICIAIS = ["Bebida", "Tira-Gosto", "Lanche", "Cigarro"]
 PRODUTOS_INICIAIS = [
     # (nome, categoria, preço em centavos, estoque)
@@ -292,7 +294,7 @@ def _comandos_sql(script):
 
 
 def _migracao_1(conexao, ambiente):
-    """Cria todas as tabelas da versão 2.0 e faz a carga inicial."""
+    """Cria todas as tabelas da versão 2.0 e, no desenvolvimento, faz a carga inicial do cardápio."""
     for comando in _comandos_sql(ESQUEMA_V1):
         conexao.execute(comando)
 
@@ -307,6 +309,9 @@ def _migracao_1(conexao, ambiente):
             "INSERT INTO configuracoes (chave, valor, atualizado_em) VALUES (?, ?, ?)",
             (chave, valor, agora),
         )
+
+    if ambiente != "desenvolvimento":
+        return
 
     ids_categorias = {}
     for ordem, nome in enumerate(CATEGORIAS_INICIAIS, start=1):

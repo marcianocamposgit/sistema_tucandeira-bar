@@ -40,6 +40,15 @@ def test_carga_inicial_com_6_produtos_e_4_categorias(conexao):
     assert conexao.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0] == 0
 
 
+def test_banco_de_producao_comeca_zerado(tmp_path):
+    """Instalação no bar: sem usuários, vendas, produtos nem categorias (o cardápio vem da planilha)."""
+    con = conectar(tmp_path / "producao.db")
+    migrar(con, "producao")
+    for tabela in ("usuarios", "categorias", "produtos", "comandas", "vendas", "caixas"):
+        assert con.execute(f"SELECT COUNT(*) FROM {tabela}").fetchone()[0] == 0, tabela
+    con.close()
+
+
 def test_migrar_de_novo_nao_duplica(conexao):
     assert migrar(conexao, "desenvolvimento") == []
     assert conexao.execute("SELECT COUNT(*) FROM produtos").fetchone()[0] == 6
@@ -174,7 +183,7 @@ def test_dois_aparelhos_escrevendo_ao_mesmo_tempo(tmp_path):
     """Várias conexões (como vários tablets) gravando juntas sem perder nada."""
     caminho = tmp_path / "concorrencia.db"
     con = conectar(caminho)
-    migrar(con)
+    migrar(con, "desenvolvimento")
     usuario, caixa = _criar_usuario_e_caixa(con)
     comanda = _abrir_comanda_mesa(con, 1, usuario, caixa)
     con.close()

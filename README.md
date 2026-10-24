@@ -11,7 +11,7 @@ Sistema web para gestão de bar: mesas, comandas, pagamentos, estoque, controle 
 
 ## Status
 
-Versão 2.0 (web) pronta para a validação no bar (`VALIDACAO.md`). O histórico das etapas está no `ROTEIRO.md`.
+Versão 2.0 (web) pronta para instalação no bar. O ensaio em casa, a instalação e o treinamento da equipe estão no `INSTALACAO_BAR.md`; o histórico das etapas está no `ROTEIRO.md`.
 
 Etapas concluídas:
 
@@ -26,7 +26,7 @@ Etapas concluídas:
 - ✅ Etapa 6 — Tela de pagamento
 - ✅ Etapa 7 — Produtos e estoque
 - ✅ Etapa 8 — Relatórios
-- ✅ Etapa 9 — Acesso pela rede, PWA e teste em tablet real (teste no tablet do bar na validação)
+- ✅ Etapa 9 — Acesso pela rede, PWA e teste em tablet real (teste no tablet do bar na instalação)
 - ✅ Etapa 10 — Backup automático, executável, início com o Windows, importação do cardápio e entrega
 
 > A versão desktop antiga (Tkinter) está preservada na tag `v1.0-tkinter` e na pasta `legado_tkinter/`, apenas como referência.
@@ -75,6 +75,8 @@ Etapas concluídas:
 
 ## Instalação no bar
 
+A instalação começa **100% zerada**: sem usuários, sem vendas e sem nenhum produto ou categoria. O primeiro acesso cria o gerente, e o cardápio entra só pela importação da planilha do dono. O passo a passo detalhado (ensaio em casa, instalação, lista do que levar e treinamento da equipe) está no **`INSTALACAO_BAR.md`**; abaixo, o resumo.
+
 ### O que levar
 
 Um pen drive com a pasta **`TucandeiraBar-2.0`** (ou o arquivo `TucandeiraBar-2.0.zip`, gerado por `scripts\gerar_exe.ps1`):
@@ -84,14 +86,14 @@ Um pen drive com a pasta **`TucandeiraBar-2.0`** (ou o arquivo `TucandeiraBar-2.
 | `TucandeiraBar.exe` | o sistema (servidor), roda sem Python |
 | `INSTALAR.bat` | instala tudo no computador do bar |
 | `ATUALIZAR.bat` | troca o programa por uma versão nova, sem mexer nos dados |
-| `COMECAR_BANCO_LIMPO.bat` | guarda o banco da validação e começa do zero |
+| `COMECAR_BANCO_LIMPO.bat` | opcional: guarda o banco de testes feitos antes da primeira venda e começa do zero |
 | `DESINSTALAR.bat` | remove o programa do computador (os dados ficam) |
 | `*.ps1` | usados pelos `.bat` (firewall, início com o Windows...) |
-| `modelo_cardapio.csv` | planilha do cardápio para o dono preencher no Excel |
-| `README.md`, `VALIDACAO.md` | estas instruções e o roteiro da noite de validação |
-| `validacao_cardapio.csv` | cardápio usado só na noite de validação |
+| `modelo_cardapio.csv` | planilha do cardápio (só o cabeçalho) para o dono preencher no Excel |
+| `README.md` | estas instruções |
+| `INSTALACAO_BAR.md` | ensaio em casa, instalação no bar, o que levar e treinamento da equipe |
 
-Leve também o tablet carregado e, se possível, um cabo de rede para o computador servidor.
+Leve também o tablet carregado, a planilha do cardápio preenchida pelo dono e, se possível, um cabo de rede para o computador servidor (lista completa no `INSTALACAO_BAR.md`).
 
 ### Passo a passo
 
@@ -111,21 +113,20 @@ Leve também o tablet carregado e, se possível, um cabo de rede para o computad
    2. No Chrome do tablet, digite o endereço que aparece na janela do servidor (ex.: `http://192.168.0.10:5000`). Deve abrir a tela do sistema.
    3. Se não abrir, siga "Solução de problemas" (firewall, rede privada, isolamento de clientes no roteador). Enquanto isso, o bar funciona só pelo PC.
    4. Opcional: instale como app em tela cheia (veja "Abrir como aplicativo").
-7. **Validação:** faça a noite de teste completa do **`VALIDACAO.md`**. Ela cria usuários de teste (Gerente Demo e Ana), importa o cardápio da validação (`validacao_cardapio.csv`) e confere, com valores esperados, mesas, comandas, pagamentos, caixa, estoque, reinício do servidor, contingência pelo PC e relatórios.
-8. **Banco limpo:** terminada a validação, rode o `COMECAR_BANCO_LIMPO.bat` (veja abaixo).
-9. **Primeiro acesso de verdade:** no navegador do computador (`http://localhost:5000`), crie o usuário **gerente** com um PIN que só o dono saiba. Em Usuários, cadastre os garçons, cada um com o seu PIN.
-10. **Cardápio do bar:** em Produtos → **Importar planilha**, envie o `modelo_cardapio.csv` preenchido pelo dono no Excel (ou baixe o modelo pela tela), confira e grave com o PIN do gerente. Marque "Desativar os produtos que não estão na planilha" para tirar do cardápio os 6 produtos de exemplo que vêm no banco novo.
-11. Pronto: abra o caixa e comece a vender.
+7. **Primeiro acesso:** no navegador do computador (`http://localhost:5000`), crie o usuário **gerente** com um PIN que só o dono saiba.
+8. **Cardápio do bar:** em Produtos → **Importar planilha**, envie o `modelo_cardapio.csv` preenchido pelo dono no Excel (ou baixe o modelo pela tela), confira linha a linha e grave com o PIN do gerente. As categorias da planilha são criadas na importação.
+9. **Garçons:** em Usuários, cadastre cada garçom com o seu PIN (autorizando com o PIN do gerente).
+10. Pronto: abra o caixa e comece a vender.
 
-### Começar com o banco limpo depois da validação
+### Começar com o banco limpo (opcional)
 
-A validação deixa vendas, caixas e usuários de teste no banco. Para começar a usar de verdade:
+Só é preciso se alguém fizer **testes no computador do bar antes da primeira venda real** (ex.: uma venda de teste com usuários ou produtos que não vão ficar). Se a primeira coisa feita depois de instalar for o gerente de verdade e o cardápio do dono, pule esta parte.
 
 1. Dois cliques em `COMECAR_BANCO_LIMPO.bat` e digite **LIMPAR**.
-2. O script fecha o servidor e **guarda** (não apaga) o banco, os backups e os logs da validação em `C:\TucandeiraBar\dados\validacao_<data e hora>\`. Depois abre o servidor de novo.
-3. O sistema começa vazio, só com o cardápio inicial de exemplo: siga os passos 9 a 11 acima (gerente de verdade, garçons e cardápio do bar).
+2. O script fecha o servidor e **guarda** (não apaga) o banco, os backups e os logs dos testes em `C:\TucandeiraBar\dados\testes_<data e hora>\`. Depois abre o servidor de novo.
+3. O sistema começa vazio (sem usuários, vendas, produtos nem categorias): siga os passos 7 a 10 acima.
 
-Faça isso **uma vez só**, antes da primeira venda real. Nunca copie o banco do computador de desenvolvimento para o bar e nunca use os dados de demonstração (`popular_demo.py`) no bar.
+Use **só antes da primeira venda real**. Nunca copie o banco do computador de desenvolvimento para o bar e nunca use os dados de demonstração (`popular_demo.py`) no bar.
 
 ### Atualizar o sistema
 

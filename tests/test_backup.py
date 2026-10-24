@@ -6,7 +6,7 @@ from services.backup import backup_se_preciso, fazer_backup, listar_backups, ult
 
 def _criar_banco(caminho):
     con = conectar(caminho)
-    migrar(con)
+    migrar(con, "desenvolvimento")
     con.close()
 
 
